@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S3SE Safe Translator</title>
+    <title>S3SE Web Editor</title>
     <style>
         :root { --primary: #0078d4; --bg: #f3f4f6; --border: #e5e7eb; --text: #374151; }
         * { box-sizing: border-box; }
@@ -15,55 +15,41 @@
             display: flex; flex-direction: column;
         }
 
-        /* --- LAYOUT UTAMA --- */
+        /* --- LAYOUT --- */
         .container { display: flex; flex: 1; overflow: hidden; height: 100%; }
         
-        /* --- SIDEBAR (FIXED WIDTH) --- */
         .sidebar { 
-            width: 280px; 
-            min-width: 280px; /* KUNCI LEBAR AGAR TIDAK MELAR */
-            background: white; 
-            border-right: 1px solid var(--border);
+            width: 260px; min-width: 260px; /* Sedikit lebih ramping */
+            background: white; border-right: 1px solid var(--border);
             display: flex; flex-direction: column; gap: 15px; padding: 20px;
             overflow-y: auto; z-index: 20;
         }
 
         .main { 
-            flex: 1; 
-            display: flex; flex-direction: column; 
-            background: #fff; 
-            overflow: hidden; 
-            position: relative;
+            flex: 1; display: flex; flex-direction: column; 
+            background: #fff; overflow: hidden; position: relative;
         }
 
         /* --- COMPONENTS --- */
         .card { 
-            background: #fff; border: 1px solid var(--border); 
-            border-radius: 8px; padding: 12px; 
+            background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px; 
             display: flex; flex-direction: column; gap: 8px;
         }
-        h3 { margin: 0; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+        h3 { margin: 0; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* DROP BOX (FIXED: Text Truncate untuk nama file panjang) */
         .drop-box { 
-            border: 2px dashed #d1d5db; padding: 20px 10px; text-align: center; 
+            border: 2px dashed #d1d5db; padding: 15px 10px; text-align: center; 
             border-radius: 6px; cursor: pointer; font-size: 13px; color: #6b7280; 
             transition: 0.2s; background: #f9fafb;
-            
-            /* AGAR NAMA FILE PANJANG JADI TITIK-TITIK (...) */
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            max-width: 230px; /* Batas lebar teks */
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 210px;
         }
         .drop-box:hover, .drop-box.dragover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
-        .drop-box.filled { background: #dbeafe; border-style: solid; border-color: var(--primary); color: #1e40af; font-weight: 500; }
+        .drop-box.filled { background: #dbeafe; border-style: solid; border-color: var(--primary); color: #1e40af; font-weight: 600; }
 
-        /* --- TABLE & GRID (FIXED: SINKRONISASI TINGGI) --- */
+        /* --- TABLE & GRID (PERBAIKAN UTAMA DISINI) --- */
         .toolbar { 
             padding: 10px 20px; border-bottom: 1px solid var(--border); 
-            display: flex; align-items: center; gap: 12px; background: #fff;
-            flex-wrap: wrap;
+            display: flex; align-items: center; gap: 12px; background: #fff; flex-wrap: wrap;
         }
 
         .grid-wrapper { flex: 1; overflow: auto; position: relative; scroll-behavior: smooth; }
@@ -76,82 +62,76 @@
             padding: 12px; color: #374151; z-index: 10; font-weight: 600;
         }
         
-        /* Pengaturan Kolom */
-        .col-guid { width: 160px; }
-        .col-source { width: 40%; } 
-        .col-target { width: auto; } 
+        /* --- UKURAN KOLOM --- */
+        .col-guid { width: 150px; }
+        .col-source { width: 38%; } /* Sumber max 38% */
+        .col-target { width: auto; } /* Target ambil sisa (Lega!) */
 
-        /* TRIK SINKRONISASI TINGGI CSS */
         td { border-bottom: 1px solid var(--border); vertical-align: top; padding: 0; height: 1px; }
         
+        /* SEL KONTEN (Anti Potong) */
+        .cell-content {
+            padding: 12px; 
+            min-height: 50px; 
+            height: 100%; 
+            display: block; /* Pastikan block element */
+            word-wrap: break-word; /* PENTING: Paksa teks panjang turun ke bawah */
+            word-break: break-word; /* PENTING: Agar URL/Kode tidak bablas ke samping */
+            white-space: pre-wrap; /* Baca enter/spasi */
+            line-height: 1.5;
+        }
+
         .cell-guid { 
-            padding: 12px; font-family: 'Consolas', monospace; color: #9ca3af; 
-            font-size: 12px; background: #f9fafb; user-select: all; word-break: break-all;
-            height: 100%;
+            font-family: 'Consolas', monospace; color: #9ca3af; font-size: 11px; 
+            background: #f9fafb; user-select: all; 
         }
         
         .cell-source { 
-            padding: 12px; color: #111827; background: #fff; 
-            white-space: pre-wrap; /* Agar enter terbaca */
+            color: #111827; background: #fff; 
             border-right: 1px solid var(--border);
-            line-height: 1.5;
-            height: 100%; /* Memaksa sel ini setinggi baris */
         }
         
-        .cell-target {
-            padding: 0; height: 100%;
-        }
-
-        /* TEXTAREA YANG MENGIKUTI TINGGI TETANGGA */
+        /* EDIT BOX (Area Ketik) */
         textarea.edit-box { 
             width: 100%; 
-            height: 100%;       /* PENTING: Mengisi penuh sel tabel */
-            min-height: 100%;   /* PENTING */
+            height: 100%;       
+            min-height: 100%;   
             border: none; padding: 12px; 
             font-family: inherit; font-size: 14px; line-height: 1.5;
-            resize: none; 
+            resize: none; /* Disable manual resize */
             display: block; background: #fff; outline: none;
-            overflow: hidden; 
+            overflow: hidden; /* Sembunyikan scrollbar agar bersih */
+            
+            /* PENTING JUGA DI SINI */
+            word-wrap: break-word;
+            word-break: break-word;
         }
-        textarea.edit-box:focus { background: #f0f9ff; box-shadow: inset 4px 0 0 var(--primary); }
+        textarea.edit-box:focus { background: #f0f9ff; box-shadow: inset 3px 0 0 var(--primary); }
 
-        /* --- BUTTONS & INPUTS --- */
-        .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px; border: 1px solid #d1d5db; background: white; transition: 0.1s; }
+        /* --- BUTTONS --- */
+        .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; border: 1px solid #d1d5db; background: white; transition: 0.1s; }
         .btn:hover { background: #f3f4f6; }
         .btn-primary { background: var(--primary); color: white; border: none; }
         .btn-primary:hover { background: #0063b1; }
         
-        .search-box { 
-            padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; 
-            width: 250px; font-size: 13px; outline: none;
-        }
+        .search-box { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; width: 250px; font-size: 13px; outline: none; }
         .search-box:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,120,212,0.1); }
 
         .pagination { padding: 10px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fff; font-size: 13px; color: #6b7280; }
 
         #loading { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; font-weight: 500; }
 
-        /* --- RESPONSIVE MEDIA QUERIES --- */
+        /* --- RESPONSIVE --- */
         @media (max-width: 900px) {
             .container { flex-direction: column; } 
-            .sidebar { 
-                width: 100%; min-width: 0; height: auto; 
-                flex-direction: row; flex-wrap: wrap; 
-                border-right: none; border-bottom: 1px solid var(--border);
-                padding: 10px; gap: 10px;
-            }
+            .sidebar { width: 100%; height: auto; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); padding: 10px; gap: 10px; }
             .card { flex: 1; min-width: 200px; } 
-            .drop-box { max-width: 100%; } /* Reset truncate di mobile */
-            .main { height: auto; flex: 1; }
+            .drop-box { max-width: 100%; }
         }
-
         @media (max-width: 600px) {
+            .col-guid { display: none; } /* Hide GUID di HP */
+            .col-source { width: 40%; }
             .sidebar { flex-direction: column; }
-            .card { width: 100%; }
-            .search-box { width: 100%; order: 2; margin-top: 5px; }
-            .toolbar { flex-direction: column; align-items: stretch; }
-            .col-guid { display: none; } 
-            .col-source { width: 45%; }
         }
     </style>
 </head>
@@ -166,7 +146,7 @@
 <div class="container">
     <div class="sidebar">
         <div class="card">
-            <h3>1. File Sumber (Source)</h3>
+            <h3>1. Sumber (Source)</h3>
             <div class="drop-box" id="dropSrc" 
                  onclick="document.getElementById('fileSrc').click()" 
                  ondragover="handleDragOver(event)" 
@@ -178,7 +158,7 @@
         </div>
 
         <div class="card">
-            <h3>2. File Terjemahan (Target)</h3>
+            <h3>2. Target (Terjemahan)</h3>
             <div class="drop-box" id="dropTgt" 
                  onclick="document.getElementById('fileTgt').click()"
                  ondragover="handleDragOver(event)" 
@@ -190,7 +170,7 @@
         </div>
 
         <div class="card" style="margin-top:auto">
-            <h3>Status</h3>
+            <h3>Info</h3>
             <div id="infoText" style="font-size:12px; color:#6b7280;">Siap digunakan.</div>
         </div>
     </div>
@@ -206,9 +186,9 @@
             <table id="grid">
                 <thead>
                     <tr>
-                        <th class="col-guid">Instance GUID</th>
+                        <th class="col-guid">ID</th>
                         <th class="col-source">Teks Sumber</th>
-                        <th class="col-target">Terjemahan</th>
+                        <th class="col-target">Terjemahan (Edit)</th>
                     </tr>
                 </thead>
                 <tbody id="tbody">
@@ -231,41 +211,24 @@
     let currentPage = 1;
     const ITEMS_PER_PAGE = 50; 
 
-    function showLoading(show) {
-        document.getElementById('loading').style.display = show ? 'flex' : 'none';
-    }
+    function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
 
-    // --- DRAG & DROP HANDLERS (YANG KEMARIN HILANG) ---
-    function handleDragOver(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.currentTarget.classList.add('dragover');
-    }
-
+    // --- DRAG DROP ---
+    function handleDragOver(e) { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add('dragover'); }
     function handleDrop(e, type) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.currentTarget.classList.remove('dragover');
-        
-        const files = e.dataTransfer.files;
-        if(files.length > 0) {
-            loadFile(type, files[0]);
-        }
+        e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('dragover');
+        if(e.dataTransfer.files.length > 0) loadFile(type, e.dataTransfer.files[0]);
     }
 
-    // --- PARSER STBL ---
+    // --- PARSER ---
     function parseSTBL(buffer) {
         const view = new DataView(buffer);
         const decoder = new TextDecoder("utf-16le");
+        try { if (new TextDecoder().decode(buffer.slice(0, 4)) !== "STBL") throw new Error(); } 
+        catch(e) { throw new Error("File STBL rusak / tidak valid."); }
         
-        // Basic check
-        try {
-            if (new TextDecoder().decode(buffer.slice(0, 4)) !== "STBL") throw new Error("Format Invalid");
-        } catch(e) { throw new Error("Bukan file STBL yang valid"); }
-
         const count = view.getUint32(7, true); 
-        let offset = 17; 
-        let entries = [];
+        let offset = 17; let entries = [];
         for(let i=0; i<count; i++) {
             const keyBig = view.getBigUint64(offset, true); offset += 8;
             const keyHex = "0x" + keyBig.toString(16).toUpperCase().padStart(16, '0');
@@ -294,11 +257,7 @@
                         if(exist) exist.sourceStr = src.str;
                         else allData.push({ ...src, sourceStr: src.str, targetStr: "" });
                     });
-                    
-                    const dz = document.getElementById('dropSrc');
-                    dz.classList.add('filled');
-                    dz.innerText = file.name; // CSS akan memotong (truncate) ini
-                    dz.title = file.name;
+                    const dz = document.getElementById('dropSrc'); dz.classList.add('filled'); dz.innerText = file.name; dz.title = file.name;
                 } else {
                     if (allData.length === 0) allData = entries.map(e => ({ ...e, sourceStr: "", targetStr: e.str }));
                     else entries.forEach(tgt => {
@@ -306,22 +265,17 @@
                         if(exist) exist.targetStr = tgt.str;
                         else allData.push({ ...tgt, sourceStr: "(Key hilang)", targetStr: tgt.str });
                     });
-                    
-                    const dz = document.getElementById('dropTgt');
-                    dz.classList.add('filled');
-                    dz.innerText = file.name;
-                    dz.title = file.name;
+                    const dz = document.getElementById('dropTgt'); dz.classList.add('filled'); dz.innerText = file.name; dz.title = file.name;
                 }
-                filteredData = allData;
-                currentPage = 1;
+                filteredData = allData; currentPage = 1;
                 renderPage();
-                document.getElementById('infoText').innerText = `Total: ${allData.length.toLocaleString()} baris`;
+                document.getElementById('infoText').innerText = `Total: ${allData.length.toLocaleString()} string`;
             } catch (err) { alert("Error: " + err.message); } 
             finally { showLoading(false); }
         }, 50);
     }
 
-    // --- RENDER HALAMAN (DENGAN TINGGI OTOMATIS) ---
+    // --- RENDER & RESIZE LOGIC (FIXED) ---
     function renderPage() {
         const tbody = document.getElementById('tbody');
         tbody.innerHTML = '';
@@ -334,40 +288,44 @@
             const val = row.targetStr !== undefined ? row.targetStr : row.sourceStr;
             
             tr.innerHTML = `
-                <td class="cell-guid">${row.keyHex}</td>
-                <td class="cell-source">${row.sourceStr || ""}</td>
-                <td class="cell-target">
+                <td class="cell-content cell-guid">${row.keyHex}</td>
+                <td class="cell-content cell-source">${row.sourceStr || ""}</td>
+                <td class="cell-target" style="padding:0; height:100%;">
                     <textarea class="edit-box" oninput="handleInput(this, '${row.keyHex}')">${val}</textarea>
                 </td>
             `;
-            
-            // Script agar textarea langsung tinggi saat pertama kali load
-            const textarea = tr.querySelector('textarea');
-            // Kita pakai CSS height:100% di .edit-box dan height:1px di td untuk memaksa
-            // textarea mengikuti tinggi tetangganya (cell-source) secara otomatis tanpa JS rumit.
-            
             frag.appendChild(tr);
         });
         tbody.appendChild(frag);
         document.getElementById('gridContainer').scrollTop = 0;
         
-        // Update Info Page
+        updatePagination();
+
+        // --- FIX: JALANKAN RESIZE SETELAH RENDER SELESAI ---
+        setTimeout(() => {
+            document.querySelectorAll('textarea.edit-box').forEach(el => {
+                if(el.scrollHeight > el.clientHeight) {
+                    el.style.height = (el.scrollHeight + 5) + "px";
+                }
+            });
+        }, 10);
+    }
+
+    window.handleInput = (el, keyHex) => {
+        const item = allData.find(d => d.keyHex === keyHex);
+        if(item) item.targetStr = el.value;
+        
+        // Auto Resize saat ngetik
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+    };
+
+    function updatePagination() {
         const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE) || 1;
         document.getElementById('pageInfo').innerText = `Hal ${currentPage} / ${totalPages}`;
         document.getElementById('btnPrev').disabled = currentPage <= 1;
         document.getElementById('btnNext').disabled = currentPage >= totalPages;
     }
-
-    window.handleInput = (el, keyHex) => {
-        // Update memori
-        const item = allData.find(d => d.keyHex === keyHex);
-        if(item) item.targetStr = el.value;
-        
-        // Auto expand (jika ngetik panjang banget melebihi source)
-        // CSS sudah handle sync, tapi ini buat memastikan jika target > source
-        el.style.height = 'auto';
-        el.style.height = el.scrollHeight + 'px';
-    };
 
     function changePage(delta) {
         const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE) || 1;
@@ -385,13 +343,12 @@
                 (i.targetStr && i.targetStr.toLowerCase().includes(term)) ||
                 (i.keyHex.toLowerCase().includes(term))
             );
-            currentPage = 1;
-            renderPage();
+            currentPage = 1; renderPage();
         }, 300);
     }
 
     function saveTargetFile() {
-        if(allData.length === 0) return alert("Kosong!");
+        if(allData.length === 0) return alert("Data kosong!");
         showLoading(true);
         setTimeout(() => {
             let strBytes = 0;
