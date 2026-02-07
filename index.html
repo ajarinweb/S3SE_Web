@@ -20,8 +20,8 @@
         
         /* --- SIDEBAR (FIXED WIDTH) --- */
         .sidebar { 
-            width: 280px; /* Lebar Fix seperti Gemini */
-            min-width: 280px;
+            width: 280px; 
+            min-width: 280px; /* KUNCI LEBAR AGAR TIDAK MELAR */
             background: white; 
             border-right: 1px solid var(--border);
             display: flex; flex-direction: column; gap: 15px; padding: 20px;
@@ -44,22 +44,22 @@
         }
         h3 { margin: 0; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* Drop Box dengan Text Truncate (Agar nama file panjang jadi ...) */
+        /* DROP BOX (FIXED: Text Truncate untuk nama file panjang) */
         .drop-box { 
             border: 2px dashed #d1d5db; padding: 20px 10px; text-align: center; 
             border-radius: 6px; cursor: pointer; font-size: 13px; color: #6b7280; 
             transition: 0.2s; background: #f9fafb;
             
-            /* Magic untuk nama file panjang */
+            /* AGAR NAMA FILE PANJANG JADI TITIK-TITIK (...) */
             white-space: nowrap; 
             overflow: hidden; 
             text-overflow: ellipsis; 
-            max-width: 100%;
+            max-width: 230px; /* Batas lebar teks */
         }
-        .drop-box:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
+        .drop-box:hover, .drop-box.dragover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
         .drop-box.filled { background: #dbeafe; border-style: solid; border-color: var(--primary); color: #1e40af; font-weight: 500; }
 
-        /* --- TABLE & GRID --- */
+        /* --- TABLE & GRID (FIXED: SINKRONISASI TINGGI) --- */
         .toolbar { 
             padding: 10px 20px; border-bottom: 1px solid var(--border); 
             display: flex; align-items: center; gap: 12px; background: #fff;
@@ -78,48 +78,45 @@
         
         /* Pengaturan Kolom */
         .col-guid { width: 160px; }
-        .col-source { width: 40%; } /* Sumber 40% layar */
-        .col-target { width: auto; } /* Target sisa layar */
+        .col-source { width: 40%; } 
+        .col-target { width: auto; } 
 
-        td { border-bottom: 1px solid var(--border); vertical-align: top; padding: 0; height: 1px; /* Trik agar child height 100% jalan */ }
+        /* TRIK SINKRONISASI TINGGI CSS */
+        td { border-bottom: 1px solid var(--border); vertical-align: top; padding: 0; height: 1px; }
         
-        /* Cells */
-        .cell-content {
-            padding: 12px; 
-            min-height: 50px; 
-            height: 100%; /* Agar memenuhi tinggi baris */
-            display: flex;
-            align-items: flex-start; /* Teks mulai dari atas */
-        }
-
         .cell-guid { 
-            font-family: 'Consolas', monospace; color: #9ca3af; 
-            font-size: 12px; background: #f9fafb; user-select: all;
-            word-break: break-all;
+            padding: 12px; font-family: 'Consolas', monospace; color: #9ca3af; 
+            font-size: 12px; background: #f9fafb; user-select: all; word-break: break-all;
+            height: 100%;
         }
         
         .cell-source { 
-            color: #111827; background: #fff; 
+            padding: 12px; color: #111827; background: #fff; 
             white-space: pre-wrap; /* Agar enter terbaca */
             border-right: 1px solid var(--border);
             line-height: 1.5;
+            height: 100%; /* Memaksa sel ini setinggi baris */
         }
         
-        /* Edit Box yang Responsif Tingginya */
+        .cell-target {
+            padding: 0; height: 100%;
+        }
+
+        /* TEXTAREA YANG MENGIKUTI TINGGI TETANGGA */
         textarea.edit-box { 
             width: 100%; 
-            height: 100%; /* Memenuhi tinggi sel tetangga */
-            min-height: 100%; 
+            height: 100%;       /* PENTING: Mengisi penuh sel tabel */
+            min-height: 100%;   /* PENTING */
             border: none; padding: 12px; 
             font-family: inherit; font-size: 14px; line-height: 1.5;
-            resize: none; /* Kita pakai JS auto-resize */
+            resize: none; 
             display: block; background: #fff; outline: none;
-            overflow: hidden; /* Sembunyikan scrollbar */
+            overflow: hidden; 
         }
         textarea.edit-box:focus { background: #f0f9ff; box-shadow: inset 4px 0 0 var(--primary); }
 
         /* --- BUTTONS & INPUTS --- */
-        .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px; border: 1px solid #d1d5db; background: white; transition: 0.1s; display: inline-flex; align-items: center; justify-content: center; }
+        .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px; border: 1px solid #d1d5db; background: white; transition: 0.1s; }
         .btn:hover { background: #f3f4f6; }
         .btn-primary { background: var(--primary); color: white; border: none; }
         .btn-primary:hover { background: #0063b1; }
@@ -132,38 +129,29 @@
 
         .pagination { padding: 10px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fff; font-size: 13px; color: #6b7280; }
 
-        /* Loading */
         #loading { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; font-weight: 500; }
 
         /* --- RESPONSIVE MEDIA QUERIES --- */
-        
-        /* Tablet & Mobile (Layar < 900px) */
         @media (max-width: 900px) {
-            .container { flex-direction: column; } /* Sidebar pindah ke atas */
+            .container { flex-direction: column; } 
             .sidebar { 
                 width: 100%; min-width: 0; height: auto; 
                 flex-direction: row; flex-wrap: wrap; 
                 border-right: none; border-bottom: 1px solid var(--border);
                 padding: 10px; gap: 10px;
             }
-            .card { flex: 1; min-width: 200px; } /* Kartu upload berjejer */
+            .card { flex: 1; min-width: 200px; } 
+            .drop-box { max-width: 100%; } /* Reset truncate di mobile */
             .main { height: auto; flex: 1; }
         }
 
-        /* Mobile Only (Layar < 600px) */
         @media (max-width: 600px) {
-            .sidebar { flex-direction: column; } /* Kartu upload numpuk lagi */
+            .sidebar { flex-direction: column; }
             .card { width: 100%; }
-            .search-box { width: 100%; order: 2; margin-top: 5px; } /* Search pindah bawah */
+            .search-box { width: 100%; order: 2; margin-top: 5px; }
             .toolbar { flex-direction: column; align-items: stretch; }
-            .btn { width: 100%; }
-            
-            /* Trik Tabel di HP */
-            .col-guid { display: none; } /* Sembunyikan GUID di HP biar lega */
+            .col-guid { display: none; } 
             .col-source { width: 45%; }
-            thead th { padding: 8px; font-size: 12px; }
-            textarea.edit-box { font-size: 13px; padding: 8px; }
-            .cell-content { padding: 8px; font-size: 13px; }
         }
     </style>
 </head>
@@ -179,7 +167,11 @@
     <div class="sidebar">
         <div class="card">
             <h3>1. File Sumber (Source)</h3>
-            <div class="drop-box" id="dropSrc" onclick="document.getElementById('fileSrc').click()" title="Klik untuk upload">
+            <div class="drop-box" id="dropSrc" 
+                 onclick="document.getElementById('fileSrc').click()" 
+                 ondragover="handleDragOver(event)" 
+                 ondrop="handleDrop(event, 'source')"
+                 title="Klik untuk upload">
                 Upload STBL Asli
             </div>
             <input type="file" id="fileSrc" hidden accept=".stbl" onchange="loadFile('source', this.files[0])">
@@ -187,7 +179,11 @@
 
         <div class="card">
             <h3>2. File Terjemahan (Target)</h3>
-            <div class="drop-box" id="dropTgt" onclick="document.getElementById('fileTgt').click()" title="Klik untuk upload">
+            <div class="drop-box" id="dropTgt" 
+                 onclick="document.getElementById('fileTgt').click()"
+                 ondragover="handleDragOver(event)" 
+                 ondrop="handleDrop(event, 'target')"
+                 title="Klik untuk upload">
                 Upload STBL Target
             </div>
             <input type="file" id="fileTgt" hidden accept=".stbl" onchange="loadFile('target', this.files[0])">
@@ -233,17 +229,40 @@
     let allData = [];      
     let filteredData = []; 
     let currentPage = 1;
-    const ITEMS_PER_PAGE = 50; // 50 baris per halaman agar ringan
+    const ITEMS_PER_PAGE = 50; 
 
     function showLoading(show) {
         document.getElementById('loading').style.display = show ? 'flex' : 'none';
     }
 
-    // --- PARSER STBL (Logic sama persis, hanya UI dipercantik) ---
+    // --- DRAG & DROP HANDLERS (YANG KEMARIN HILANG) ---
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.currentTarget.classList.add('dragover');
+    }
+
+    function handleDrop(e, type) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.currentTarget.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if(files.length > 0) {
+            loadFile(type, files[0]);
+        }
+    }
+
+    // --- PARSER STBL ---
     function parseSTBL(buffer) {
         const view = new DataView(buffer);
         const decoder = new TextDecoder("utf-16le");
-        if (new TextDecoder().decode(buffer.slice(0, 4)) !== "STBL") throw new Error("Format Invalid");
+        
+        // Basic check
+        try {
+            if (new TextDecoder().decode(buffer.slice(0, 4)) !== "STBL") throw new Error("Format Invalid");
+        } catch(e) { throw new Error("Bukan file STBL yang valid"); }
+
         const count = view.getUint32(7, true); 
         let offset = 17; 
         let entries = [];
@@ -275,11 +294,11 @@
                         if(exist) exist.sourceStr = src.str;
                         else allData.push({ ...src, sourceStr: src.str, targetStr: "" });
                     });
-                    // UI Update
+                    
                     const dz = document.getElementById('dropSrc');
                     dz.classList.add('filled');
-                    dz.innerText = file.name; // CSS akan memotong nama ini jika panjang
-                    dz.title = file.name; // Tooltip full name
+                    dz.innerText = file.name; // CSS akan memotong (truncate) ini
+                    dz.title = file.name;
                 } else {
                     if (allData.length === 0) allData = entries.map(e => ({ ...e, sourceStr: "", targetStr: e.str }));
                     else entries.forEach(tgt => {
@@ -287,6 +306,7 @@
                         if(exist) exist.targetStr = tgt.str;
                         else allData.push({ ...tgt, sourceStr: "(Key hilang)", targetStr: tgt.str });
                     });
+                    
                     const dz = document.getElementById('dropTgt');
                     dz.classList.add('filled');
                     dz.innerText = file.name;
@@ -301,14 +321,7 @@
         }, 50);
     }
 
-    // --- AUTO RESIZE TEXTAREA (Logic Penting!) ---
-    function autoResize(textarea) {
-        textarea.style.height = 'auto'; // Reset dulu
-        textarea.style.height = textarea.scrollHeight + 'px'; // Set sesuai konten
-        // Jika sel tetangga lebih tinggi, CSS height:100% akan memaksa textarea tetap tinggi
-    }
-
-    // --- RENDER HALAMAN ---
+    // --- RENDER HALAMAN (DENGAN TINGGI OTOMATIS) ---
     function renderPage() {
         const tbody = document.getElementById('tbody');
         tbody.innerHTML = '';
@@ -321,22 +334,18 @@
             const val = row.targetStr !== undefined ? row.targetStr : row.sourceStr;
             
             tr.innerHTML = `
-                <td class="cell-content cell-guid">${row.keyHex}</td>
-                <td class="cell-content cell-source">${row.sourceStr || ""}</td>
-                <td style="padding:0; height:100%;">
+                <td class="cell-guid">${row.keyHex}</td>
+                <td class="cell-source">${row.sourceStr || ""}</td>
+                <td class="cell-target">
                     <textarea class="edit-box" oninput="handleInput(this, '${row.keyHex}')">${val}</textarea>
                 </td>
             `;
             
-            // Script untuk inisialisasi tinggi awal textarea agar match Source
+            // Script agar textarea langsung tinggi saat pertama kali load
             const textarea = tr.querySelector('textarea');
-            // Kita pakai requestAnimationFrame agar render CSS selesai dulu baru hitung tinggi
-            requestAnimationFrame(() => {
-                if(textarea.scrollHeight > textarea.clientHeight) {
-                    textarea.style.height = textarea.scrollHeight + "px";
-                }
-            });
-
+            // Kita pakai CSS height:100% di .edit-box dan height:1px di td untuk memaksa
+            // textarea mengikuti tinggi tetangganya (cell-source) secara otomatis tanpa JS rumit.
+            
             frag.appendChild(tr);
         });
         tbody.appendChild(frag);
@@ -350,19 +359,20 @@
     }
 
     window.handleInput = (el, keyHex) => {
-        // 1. Update data di memori
+        // Update memori
         const item = allData.find(d => d.keyHex === keyHex);
         if(item) item.targetStr = el.value;
         
-        // 2. Auto expand
+        // Auto expand (jika ngetik panjang banget melebihi source)
+        // CSS sudah handle sync, tapi ini buat memastikan jika target > source
         el.style.height = 'auto';
         el.style.height = el.scrollHeight + 'px';
     };
 
     function changePage(delta) {
         const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE) || 1;
-        const new = currentPage + delta;
-        if(new > 0 && new <= totalPages) { currentPage = new; renderPage(); }
+        const newPage = currentPage + delta;
+        if(newPage > 0 && newPage <= totalPages) { currentPage = newPage; renderPage(); }
     }
 
     let searchTimer;
