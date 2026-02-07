@@ -10,124 +10,142 @@
         
         /* Layout */
         .container { display: flex; gap: 20px; flex: 1; min-height: 0; }
-        .sidebar { flex: 0 0 300px; display: flex; flex-direction: column; gap: 15px; }
+        .sidebar { flex: 0 0 280px; display: flex; flex-direction: column; gap: 15px; }
         .main { flex: 1; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
 
         /* Components */
-        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         h3 { margin-top: 0; font-size: 14px; color: #555; border-bottom: 1px solid #eee; padding-bottom: 8px; }
 
         .drop-box { 
-            border: 2px dashed #aaa; padding: 20px; text-align: center; 
+            border: 2px dashed #aaa; padding: 15px; text-align: center; 
             border-radius: 6px; cursor: pointer; font-size: 13px; color: #666; transition: 0.2s;
         }
         .drop-box:hover { background: #eeffff; border-color: var(--primary); color: var(--primary); }
         .drop-box.filled { background: #e3f2fd; border-style: solid; border-color: var(--primary); color: #005a9e; font-weight: bold; }
 
-        /* Grid / Table */
+        /* Grid */
         .grid-wrapper { flex: 1; overflow: auto; position: relative; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+        thead th { position: sticky; top: 0; background: #f9f9f9; border-bottom: 2px solid #ddd; text-align: left; padding: 8px; z-index: 10; color: #333; }
         
-        thead th { position: sticky; top: 0; background: #f9f9f9; border-bottom: 2px solid #ddd; text-align: left; padding: 10px; z-index: 10; color: #333; }
-        
-        /* Column Widths */
         .col-guid { width: 140px; }
         .col-source { width: 40%; }
         .col-target { width: auto; }
 
         td { border-bottom: 1px solid #eee; vertical-align: top; padding: 0; }
+        .cell-guid { padding: 8px; font-family: monospace; color: #999; background: #fcfcfc; font-size: 11px; user-select: all; }
+        .cell-source { padding: 8px; color: #444; background: #fcfcfc; white-space: pre-wrap; border-right: 1px solid #eee; font-size: 12px; }
         
-        /* Read Only Cells */
-        .cell-guid { padding: 10px; font-family: monospace; color: #888; background: #fdfdfd; user-select: all; font-size: 11px; }
-        .cell-source { padding: 10px; color: #444; background: #fdfdfd; white-space: pre-wrap; border-right: 1px solid #eee; }
-        
-        /* Editable Cells */
         textarea.edit-box { 
-            width: 100%; height: 100%; min-height: 40px; border: none; padding: 10px; 
-            font-family: inherit; font-size: 13px; resize: vertical; box-sizing: border-box; display: block;
-            background: #fff;
+            width: 100%; height: 100%; min-height: 38px; border: none; padding: 8px; 
+            font-family: inherit; font-size: 13px; resize: none; display: block; background: #fff;
         }
-        textarea.edit-box:focus { background: #f0f8ff; outline: 2px solid var(--primary); position: relative; z-index: 2; }
+        textarea.edit-box:focus { background: #f0f8ff; outline: 2px solid var(--primary); z-index: 2; position: relative; }
 
-        /* Toolbar */
-        .toolbar { padding: 10px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; background: #fafafa; }
-        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; }
-        .btn-save { background: #107c10; color: white; }
-        .btn-save:hover { background: #0b5a0b; }
+        /* Toolbar & Pagination */
+        .toolbar { padding: 8px 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; background: #fafafa; }
+        .pagination { padding: 8px 15px; border-top: 1px solid #eee; display: flex; align-items: center; justify-content: center; gap: 10px; background: #fafafa; font-size: 13px; }
         
-        .badge-safe { background: #e6ffec; color: #107c10; padding: 2px 6px; border-radius: 4px; font-size: 11px; border: 1px solid #bcebc3; }
+        .btn { padding: 6px 14px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; }
+        .btn:hover { background: #f0f0f0; }
+        .btn:disabled { opacity: 0.5; cursor: default; }
+        .btn-primary { background: var(--primary); color: white; border: none; }
+        .btn-primary:hover { background: #005a9e; }
+        .btn-save { background: #107c10; color: white; border: none; }
+        .btn-save:hover { background: #0b5a0b; }
+
+        .search-box { padding: 6px; border: 1px solid #ccc; border-radius: 4px; width: 200px; }
+        
+        /* Loading Overlay */
+        #loading { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.8); z-index: 999; display: none; align-items: center; justify-content: center; font-size: 20px; color: #333; font-weight: bold; }
     </style>
 </head>
 <body>
 
+<div id="loading">Sedang Memproses...</div>
+
 <div class="container">
     <div class="sidebar">
         <div class="card">
-            <h3>1. File Sumber (Read Only)</h3>
+            <h3>1. File Sumber (Source)</h3>
             <div class="drop-box" id="dropSrc" onclick="document.getElementById('fileSrc').click()">
-                Klik / Drop File STBL Asli<br>(Misal: English)
+                File STBL Asli
             </div>
-            <input type="file" id="fileSrc" hidden accept=".stbl" onchange="loadSource(this.files[0])">
+            <input type="file" id="fileSrc" hidden accept=".stbl" onchange="loadFile('source', this.files[0])">
         </div>
 
         <div class="card">
-            <h3>2. File Terjemahan (Edit)</h3>
+            <h3>2. File Terjemahan (Target)</h3>
             <div class="drop-box" id="dropTgt" onclick="document.getElementById('fileTgt').click()">
-                Klik / Drop File STBL Target<br>(Misal: Indo/Kosong)
+                File STBL Target
             </div>
-            <input type="file" id="fileTgt" hidden accept=".stbl" onchange="loadTarget(this.files[0])">
-            <p style="font-size:11px; color:#666; margin-bottom:0; margin-top:5px;">
-                *Jika belum punya file target, upload file Sumber lagi ke sini untuk mulai menerjemahkan dari awal.
-            </p>
+            <input type="file" id="fileTgt" hidden accept=".stbl" onchange="loadFile('target', this.files[0])">
         </div>
 
         <div class="card">
             <h3>Info</h3>
-            <p style="font-size:12px; margin:0; color:#555;">
-                <span class="badge-safe">SAFE MODE</span><br><br>
-                GUID dikunci. Hanya teks di kolom kanan yang akan disimpan. Struktur file dijamin 100% sama dengan aslinya.
-            </p>
+            <div id="infoText" style="font-size:12px; color:#666;">
+                Belum ada data.<br>
+                Silakan upload file STBL.
+            </div>
         </div>
     </div>
 
     <div class="main">
         <div class="toolbar">
-            <button class="btn btn-save" onclick="saveTargetFile()">💾 Simpan Hasil (.stbl)</button>
-            <span id="status" style="margin-left:auto; font-size:12px; color:#666;">Menunggu file...</span>
+            <button class="btn btn-save" onclick="saveTargetFile()">💾 Simpan (.stbl)</button>
+            <div style="flex:1"></div>
+            <input type="text" class="search-box" id="searchInput" placeholder="Cari teks..." onkeyup="handleSearch()">
         </div>
-        <div class="grid-wrapper">
+        
+        <div class="grid-wrapper" id="gridContainer">
             <table id="grid">
                 <thead>
                     <tr>
-                        <th class="col-guid">Instance GUID 🔒</th>
-                        <th class="col-source">Teks Asli (Source)</th>
-                        <th class="col-target">Terjemahan (Target)</th>
+                        <th class="col-guid">GUID (Read Only)</th>
+                        <th class="col-source">Sumber</th>
+                        <th class="col-target">Terjemahan</th>
                     </tr>
                 </thead>
                 <tbody id="tbody">
                     </tbody>
             </table>
         </div>
+
+        <div class="pagination">
+            <button class="btn" onclick="changePage(-1)" id="btnPrev">❮ Prev</button>
+            <span id="pageInfo">Halaman 1 / 1</span>
+            <button class="btn" onclick="changePage(1)" id="btnNext">Next ❯</button>
+            <span style="margin-left:15px; color:#888; font-size:11px;" id="totalCount">Total: 0 baris</span>
+        </div>
     </div>
 </div>
 
 <script>
-    // DATA MEMORY
-    let rowData = []; // { keyBig, keyHex, sourceStr, targetStr }
+    // --- STATE MANAGEMENT ---
+    let allData = [];      // Database utama (Source of Truth)
+    let filteredData = []; // Hasil pencarian
+    let currentPage = 1;
+    const ITEMS_PER_PAGE = 100; // Render cuma 100 baris agar ringan
 
-    // --- 1. PARSER STBL (Sama seperti sebelumnya) ---
+    // --- WORKER HELPERS (Untuk UI Non-Blocking) ---
+    function showLoading(show) {
+        document.getElementById('loading').style.display = show ? 'flex' : 'none';
+    }
+
+    // --- PARSER (Sama seperti sebelumnya) ---
     function parseSTBL(buffer) {
         const view = new DataView(buffer);
         const decoder = new TextDecoder("utf-16le");
         
-        // Header Check
-        const magic = new TextDecoder().decode(buffer.slice(0, 4));
-        if (magic !== "STBL") throw new Error("Bukan file STBL Sims 3 valid.");
+        if (new TextDecoder().decode(buffer.slice(0, 4)) !== "STBL") throw new Error("Format Invalid");
         
-        // Baca Count (Offset 7 untuk Sims 3 standar)
-        const count = view.getUint32(7, true);
+        // Coba deteksi count (biasanya offset 7 di Sims 3)
+        // Header Sims 3: STBL(4) + Ver(1) + Res(2) + Count(4)
+        const count = view.getUint32(7, true); 
         
-        let offset = 17; // Skip Header
+        let offset = 17; 
         let entries = [];
 
         for(let i=0; i<count; i++) {
@@ -145,135 +163,199 @@
         return entries;
     }
 
-    // --- 2. LOADERS ---
-    async function loadSource(file) {
+    // --- LOAD FILE LOGIC ---
+    async function loadFile(type, file) {
         if(!file) return;
-        try {
-            const buf = await file.arrayBuffer();
-            const entries = parseSTBL(buf);
-            
-            // Masukkan ke rowData sebagai Source
-            // Jika rowData kosong, inisialisasi
-            if(rowData.length === 0) {
-                rowData = entries.map(e => ({ ...e, sourceStr: e.str, targetStr: "" }));
-            } else {
-                // Jika sudah ada data, update kolom Source berdasarkan Key
-                entries.forEach(src => {
-                    const exist = rowData.find(r => r.keyHex === src.keyHex);
-                    if(exist) exist.sourceStr = src.str;
-                    else rowData.push({ ...src, sourceStr: src.str, targetStr: "" }); // Tambah baris baru jika target ga punya
-                });
+        showLoading(true);
+
+        // Gunakan setTimeout agar UI sempat render Loading screen sebelum proses berat
+        setTimeout(async () => {
+            try {
+                const buf = await file.arrayBuffer();
+                const entries = parseSTBL(buf);
+                
+                if (type === 'source') {
+                    // Update Source Map
+                    if (allData.length === 0) {
+                        allData = entries.map(e => ({ ...e, sourceStr: e.str, targetStr: "" }));
+                    } else {
+                        // Merge source text ke existing data
+                        entries.forEach(src => {
+                            const exist = allData.find(r => r.keyBig === src.keyBig); // Pakai BigInt biar akurat
+                            if(exist) exist.sourceStr = src.str;
+                            else allData.push({ ...src, sourceStr: src.str, targetStr: "" });
+                        });
+                    }
+                    document.getElementById('dropSrc').classList.add('filled');
+                    document.getElementById('dropSrc').innerText = "Source: " + file.name;
+                } 
+                else {
+                    // Update Target Map
+                    if (allData.length === 0) {
+                        allData = entries.map(e => ({ ...e, sourceStr: "", targetStr: e.str }));
+                    } else {
+                        // Merge target text
+                        entries.forEach(tgt => {
+                            const exist = allData.find(r => r.keyBig === tgt.keyBig);
+                            if(exist) exist.targetStr = tgt.str;
+                            else allData.push({ ...tgt, sourceStr: "(Key tidak ada di source)", targetStr: tgt.str });
+                        });
+                    }
+                    document.getElementById('dropTgt').classList.add('filled');
+                    document.getElementById('dropTgt').innerText = "Target: " + file.name;
+                }
+
+                // Reset Filter & Render
+                document.getElementById('searchInput').value = "";
+                filteredData = allData;
+                currentPage = 1;
+                renderPage();
+                updateInfo();
+
+            } catch (err) {
+                alert("Gagal load: " + err.message);
+            } finally {
+                showLoading(false);
             }
-            
-            document.getElementById('dropSrc').classList.add('filled');
-            document.getElementById('dropSrc').innerText = "Source: " + file.name;
-            renderGrid();
-        } catch(e) { alert("Error: " + e.message); }
+        }, 50);
     }
 
-    async function loadTarget(file) {
-        if(!file) return;
-        try {
-            const buf = await file.arrayBuffer();
-            const entries = parseSTBL(buf);
-
-            // Masukkan ke rowData sebagai Target
-            if(rowData.length === 0) {
-                // Kalau source belum diupload, jadikan ini base rowData
-                rowData = entries.map(e => ({ ...e, sourceStr: "", targetStr: e.str }));
-            } else {
-                // Update kolom Target
-                entries.forEach(tgt => {
-                    const exist = rowData.find(r => r.keyHex === tgt.keyHex);
-                    if(exist) exist.targetStr = tgt.str;
-                    else rowData.push({ ...tgt, sourceStr: "(Key tidak ada di source)", targetStr: tgt.str });
-                });
-            }
-
-            document.getElementById('dropTgt').classList.add('filled');
-            document.getElementById('dropTgt').innerText = "Target: " + file.name;
-            renderGrid();
-        } catch(e) { alert("Error: " + e.message); }
-    }
-
-    // --- 3. RENDERER ---
-    function renderGrid() {
+    // --- RENDERING (PAGINATION) ---
+    function renderPage() {
         const tbody = document.getElementById('tbody');
-        tbody.innerHTML = '';
-        
-        // Optimasi: Gunakan Fragment
+        tbody.innerHTML = ''; // Hapus halaman sebelumnya
+
+        // Hitung slice data
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        const end = start + ITEMS_PER_PAGE;
+        const pageData = filteredData.slice(start, end);
+
+        // Fragment agar insert ke DOM sekali jalan
         const frag = document.createDocumentFragment();
 
-        rowData.forEach((row, idx) => {
+        pageData.forEach(row => {
             const tr = document.createElement('tr');
+            const val = row.targetStr !== undefined ? row.targetStr : row.sourceStr;
             
-            // Jika target kosong, otomatis isi dengan source biar gampang diedit
-            const val = row.targetStr || row.sourceStr; 
+            // Kita simpan referensi objek asli di atribut data-index untuk update balik
+            // Tapi karena filteredData bisa berubah urutan, lebih aman pakai ID/Key reference atau direct object binding
+            // Cara termudah: event handler pakai closure
             
             tr.innerHTML = `
                 <td class="cell-guid">${row.keyHex}</td>
-                <td class="cell-source">${row.sourceStr}</td>
-                <td style="padding:0;">
-                    <textarea class="edit-box" oninput="updateVal(${idx}, this.value)">${val}</textarea>
+                <td class="cell-source">${row.sourceStr || ""}</td>
+                <td style="padding:0">
+                    <textarea class="edit-box">${val}</textarea>
                 </td>
             `;
+
+            // Bind event input
+            const textarea = tr.querySelector('textarea');
+            textarea.oninput = function() {
+                row.targetStr = this.value; // Update langsung ke object reference di memori
+            };
+
             frag.appendChild(tr);
         });
-        
+
         tbody.appendChild(frag);
-        document.getElementById('status').innerText = `Total: ${rowData.length} baris string.`;
+        document.getElementById('gridContainer').scrollTop = 0; // Scroll ke atas
+        updatePaginationUI();
     }
 
-    window.updateVal = (idx, val) => {
-        rowData[idx].targetStr = val;
-    }
-
-    // --- 4. SAVER (PRESERVE GUID) ---
-    function saveTargetFile() {
-        if(rowData.length === 0) return alert("Data kosong!");
-
-        // Hitung Size
-        let strBytes = 0;
-        rowData.forEach(r => strBytes += (r.targetStr || "").length * 2);
+    function updatePaginationUI() {
+        const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE) || 1;
+        document.getElementById('pageInfo').innerText = `Halaman ${currentPage} / ${totalPages}`;
+        document.getElementById('totalCount').innerText = `Total: ${filteredData.length.toLocaleString()} baris`;
         
-        // Header(17) + Entries(12 each) + Strings
-        const totalSize = 17 + (rowData.length * 12) + strBytes;
-        const buffer = new ArrayBuffer(totalSize);
-        const view = new DataView(buffer);
-        let offset = 0;
+        document.getElementById('btnPrev').disabled = currentPage <= 1;
+        document.getElementById('btnNext').disabled = currentPage >= totalPages;
+    }
 
-        // Write Header Standard
-        const magic = "STBL";
-        for(let i=0; i<4; i++) view.setUint8(i, magic.charCodeAt(i)); offset+=4;
-        view.setUint8(offset, 2); offset+=1; // Ver
-        view.setUint16(offset, 0, true); offset+=2; // Res
-        view.setUint32(offset, rowData.length, true); offset+=4; // Count
-        view.setUint32(offset, 0, true); offset+=4; // Res
-        view.setUint16(offset, 0, true); offset+=2; // Res
+    function changePage(delta) {
+        const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE) || 1;
+        const newPage = currentPage + delta;
+        if(newPage > 0 && newPage <= totalPages) {
+            currentPage = newPage;
+            renderPage();
+        }
+    }
 
-        // Write Data
-        rowData.forEach(row => {
-            const txt = row.targetStr || row.sourceStr || ""; // Fallback ke source jika target kosong
+    function updateInfo() {
+        document.getElementById('infoText').innerHTML = 
+            `Total Strings: <b>${allData.length.toLocaleString()}</b><br>` +
+            `Memory Usage: ~${(allData.length * 0.001).toFixed(1)} MB (Est)`;
+    }
+
+    // --- SEARCH ---
+    let searchTimeout;
+    function handleSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const term = document.getElementById('searchInput').value.toLowerCase();
             
-            // GUID ASLI DARI FILE (Tidak digenerate ulang)
-            view.setBigUint64(offset, row.keyBig, true); offset+=8;
-            
-            // Length
-            view.setUint32(offset, txt.length, true); offset+=4;
-            
-            // String UTF-16
-            for(let i=0; i<txt.length; i++) {
-                view.setUint16(offset, txt.charCodeAt(i), true); offset+=2;
+            if (!term) {
+                filteredData = allData;
+            } else {
+                // Cari di GUID, Source, atau Target
+                filteredData = allData.filter(item => 
+                    (item.sourceStr && item.sourceStr.toLowerCase().includes(term)) ||
+                    (item.targetStr && item.targetStr.toLowerCase().includes(term)) ||
+                    (item.keyHex.toLowerCase().includes(term))
+                );
             }
-        });
+            
+            currentPage = 1;
+            renderPage();
+        }, 300); // Debounce 300ms agar tidak lag saat mengetik
+    }
 
-        // Download
-        const blob = new Blob([buffer], { type: "application/octet-stream" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = "Translated_Strings.stbl";
-        a.click();
+    // --- SAVING ---
+    function saveTargetFile() {
+        if(allData.length === 0) return alert("Data kosong!");
+        showLoading(true);
+
+        setTimeout(() => {
+            // Hitung Size
+            let strBytes = 0;
+            // Kita simpan SEMUA data (allData), bukan cuma yang difilter/dilihat
+            allData.forEach(r => strBytes += (r.targetStr || r.sourceStr || "").length * 2);
+            
+            const totalSize = 17 + (allData.length * 12) + strBytes;
+            const buffer = new ArrayBuffer(totalSize);
+            const view = new DataView(buffer);
+            let offset = 0;
+
+            // Header
+            const magic = "STBL";
+            for(let i=0; i<4; i++) view.setUint8(i, magic.charCodeAt(i)); offset+=4;
+            view.setUint8(offset, 2); offset+=1; 
+            view.setUint16(offset, 0, true); offset+=2; 
+            view.setUint32(offset, allData.length, true); offset+=4; 
+            view.setUint32(offset, 0, true); offset+=4; 
+            view.setUint16(offset, 0, true); offset+=2; 
+
+            // Entries
+            allData.forEach(row => {
+                const txt = row.targetStr !== undefined ? row.targetStr : (row.sourceStr || "");
+                
+                view.setBigUint64(offset, row.keyBig, true); offset+=8;
+                view.setUint32(offset, txt.length, true); offset+=4;
+                
+                for(let i=0; i<txt.length; i++) {
+                    view.setUint16(offset, txt.charCodeAt(i), true); offset+=2;
+                }
+            });
+
+            const blob = new Blob([buffer], { type: "application/octet-stream" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "Translated_Strings_Fast.stbl";
+            a.click();
+            
+            showLoading(false);
+        }, 50);
     }
 </script>
 
