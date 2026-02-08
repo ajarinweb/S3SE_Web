@@ -2,171 +2,287 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>S3SE Web Editor</title>
     <style>
-        :root { --primary: #0078d4; --bg: #f3f4f6; --border: #e5e7eb; --text: #374151; }
+        /* --- 1. SETTING WARNA (VARIABLES) --- */
+        :root {
+            --primary: #0078d4;
+            --bg-body: #f3f4f6;
+            --bg-panel: #ffffff;
+            --text-main: #374151;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --table-head: #f9fafb;
+            --table-hover: #f0f9ff;
+            --input-bg: #ffffff;
+            --guid-bg: #f9fafb;
+            --scrollbar: #ccc;
+        }
+
+        /* DARK MODE PALETTE */
+        [data-theme="dark"] {
+            --primary: #4dabf5;
+            --bg-body: #121212;
+            --bg-panel: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border: #333333;
+            --table-head: #252525;
+            --table-hover: #2a2a2a;
+            --input-bg: #1e1e1e;
+            --guid-bg: #252525;
+            --scrollbar: #444;
+        }
+
         * { box-sizing: border-box; }
         
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background: var(--bg); color: var(--text);
+            background: var(--bg-body); color: var(--text-main);
             margin: 0; padding: 0; height: 100vh; 
             display: flex; flex-direction: column;
+            transition: background 0.3s, color 0.3s;
         }
 
         /* --- LAYOUT UTAMA --- */
-        .container { display: flex; flex: 1; overflow: hidden; height: 100%; }
-        
+        .container { display: flex; flex: 1; overflow: hidden; height: 100%; position: relative; }
+
+        /* --- SIDEBAR (OFF-CANVAS di MOBILE) --- */
         .sidebar { 
             width: 280px; min-width: 280px; 
-            background: white; border-right: 1px solid var(--border);
+            background: var(--bg-panel); 
+            border-right: 1px solid var(--border);
             display: flex; flex-direction: column; gap: 15px; padding: 20px;
-            overflow-y: auto; z-index: 20;
+            overflow-y: auto; z-index: 50;
+            transition: transform 0.3s ease, background 0.3s;
         }
 
+        /* --- MAIN AREA --- */
         .main { 
             flex: 1; display: flex; flex-direction: column; 
-            background: #fff; overflow: hidden; position: relative;
+            background: var(--bg-panel); overflow: hidden; position: relative;
+            transition: background 0.3s;
         }
 
-        /* COMPONENTS */
-        .card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-        h3 { margin: 0; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; }
+        /* --- TOOLBAR (HEADER) --- */
+        .toolbar { 
+            padding: 10px 15px; border-bottom: 1px solid var(--border); 
+            display: flex; align-items: center; gap: 10px; 
+            background: var(--bg-panel); min-height: 50px;
+        }
+
+        /* HAMBURGER BUTTON (Mobile Only) */
+        .menu-btn {
+            display: none; /* Hidden on Desktop */
+            background: transparent; border: none; font-size: 24px; cursor: pointer; color: var(--text-main); padding: 5px;
+        }
+
+        /* THEME TOGGLE BUTTON */
+        .theme-btn {
+            background: transparent; border: 1px solid var(--border); 
+            border-radius: 50%; width: 32px; height: 32px; 
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            margin-left: auto; color: var(--text-main);
+        }
+
+        /* --- COMPONENTS --- */
+        .card { 
+            background: var(--bg-panel); border: 1px solid var(--border); 
+            border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; 
+        }
+        h3 { margin: 0; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
 
         .drop-box { 
-            border: 2px dashed #d1d5db; padding: 20px 10px; text-align: center; 
-            border-radius: 6px; cursor: pointer; font-size: 13px; color: #6b7280; 
-            transition: 0.2s; background: #f9fafb;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px;
+            border: 2px dashed var(--border); padding: 20px 10px; text-align: center; 
+            border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text-muted); 
+            transition: 0.2s; background: var(--bg-body);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        .drop-box:hover, .drop-box.dragover { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
-        .drop-box.filled { background: #dbeafe; border-style: solid; border-color: var(--primary); color: #1e40af; font-weight: 600; }
+        .drop-box:hover { border-color: var(--primary); color: var(--primary); }
+        .drop-box.filled { background: rgba(0, 120, 212, 0.1); border-style: solid; border-color: var(--primary); color: var(--primary); font-weight: 600; }
 
-        /* --- TABLE STYLE (YANG DIPERBAIKI) --- */
+        /* --- TABLE STYLE --- */
         .grid-wrapper { flex: 1; overflow: auto; position: relative; }
         
         table { width: 100%; border-collapse: collapse; font-size: 14px; table-layout: fixed; }
         
         thead th { 
-            position: sticky; top: 0; background: #f9fafb; 
+            position: sticky; top: 0; background: var(--table-head); 
             border-bottom: 2px solid var(--border); text-align: left; 
-            padding: 12px; color: #374151; z-index: 10; font-weight: 600;
+            padding: 12px; color: var(--text-main); z-index: 10; font-weight: 600;
         }
         
         /* KOLOM */
-        .col-guid { width: 160px; }
+        .col-guid { width: 150px; }
         .col-source { width: 40%; } 
         .col-target { width: auto; } 
 
         td { 
             border-bottom: 1px solid var(--border); 
-            vertical-align: top; 
-            padding: 0; 
-            height: 1px; /* Trik agar sel mengikuti tinggi row */
+            vertical-align: top; padding: 0; height: 1px; 
         }
         
         .cell-guid { 
-            padding: 12px; font-family: 'Consolas', monospace; color: #9ca3af; 
-            font-size: 12px; background: #f9fafb; user-select: all; word-break: break-all;
-            height: 100%;
+            padding: 12px; font-family: 'Consolas', monospace; color: var(--text-muted);
+            font-size: 11px; background: var(--guid-bg); user-select: all; word-break: break-all; height: 100%;
         }
         
         .cell-source { 
-            padding: 12px; color: #111827; background: #fff; 
+            padding: 12px; color: var(--text-main); background: var(--bg-panel); 
             white-space: pre-wrap; word-wrap: break-word; border-right: 1px solid var(--border);
             line-height: 1.5; height: 100%;
         }
         
-        .cell-target { padding: 0; height: 100%; background: #fff; position: relative; }
+        .cell-target { padding: 0; height: 100%; background: var(--bg-panel); }
 
-        /* --- TEXTAREA AUTO-GROW MAGIC --- */
         textarea.edit-box { 
-            width: 100%; 
-            height: 100%;       /* Default fill parent */
-            border: none; 
-            padding: 12px; 
+            width: 100%; height: 100%; border: none; padding: 12px; 
             font-family: inherit; font-size: 14px; line-height: 1.5;
-            resize: none;       /* Matikan resize manual */
-            display: block; 
-            background: transparent; outline: none;
-            overflow: hidden;   /* Hilangkan Scrollbar */
-            box-sizing: border-box;
-            min-height: 45px;   /* Tinggi minimal 1 baris */
+            resize: none; display: block; background: transparent; color: var(--text-main);
+            outline: none; overflow: hidden; box-sizing: border-box; min-height: 45px;
         }
-        textarea.edit-box:focus { background: #f0f9ff; box-shadow: inset 3px 0 0 var(--primary); }
+        textarea.edit-box:focus { background: rgba(0, 120, 212, 0.05); box-shadow: inset 3px 0 0 var(--primary); }
 
-        /* UI ELEMENTS */
-        .toolbar { padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: #fff; }
-        .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px; border: 1px solid #d1d5db; background: white; }
-        .btn:hover { background: #f3f4f6; }
+        /* --- BUTTONS & INPUTS --- */
+        .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px; border: 1px solid var(--border); background: var(--bg-panel); color: var(--text-main); }
+        .btn:hover { background: var(--bg-body); }
         .btn-primary { background: var(--primary); color: white; border: none; }
-        .search-box { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; width: 250px; font-size: 13px; outline: none; }
-        .search-box:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,120,212,0.1); }
-        .pagination { padding: 10px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fff; font-size: 13px; color: #6b7280; }
-        #loading { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; font-weight: 500; }
-
-        /* RESPONSIVE */
-        @media (max-width: 900px) {
-            .container { flex-direction: column; } 
-            .sidebar { width: 100%; min-width: 0; height: auto; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); padding: 10px; gap: 10px; }
-            .card { flex: 1; min-width: 200px; } .drop-box { max-width: 100%; } .main { height: auto; flex: 1; }
+        .search-box { 
+            padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; 
+            width: 200px; font-size: 13px; outline: none; background: var(--input-bg); color: var(--text-main);
         }
-        @media (max-width: 600px) {
-            .sidebar { flex-direction: column; } .card { width: 100%; } .search-box { width: 100%; order: 2; margin-top: 5px; } .toolbar { flex-direction: column; align-items: stretch; } .col-guid { display: none; } .col-source { width: 45%; }
+        .search-box:focus { border-color: var(--primary); }
+        
+        .pagination { padding: 10px 15px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-panel); font-size: 13px; color: var(--text-muted); }
+        #loading { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; font-weight: 500; color: white; }
+
+        /* --- OVERLAY UNTUK MOBILE --- */
+        .sidebar-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40;
+        }
+
+        /* --- RESPONSIVE LOGIC (MOBILE) --- */
+        @media (max-width: 900px) {
+            /* 1. Sidebar sembunyi (Off-Canvas) */
+            .sidebar {
+                position: fixed; left: 0; top: 0; bottom: 0;
+                transform: translateX(-100%); /* Geser ke kiri layar */
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            }
+            
+            /* 2. Sidebar saat aktif (muncul) */
+            .sidebar.active { transform: translateX(0); }
+            
+            /* 3. Overlay muncul saat sidebar aktif */
+            .sidebar.active + .sidebar-overlay { display: block; }
+
+            /* 4. Tampilkan tombol Menu */
+            .menu-btn { display: block; }
+            
+            /* 5. Tabel di HP */
+            .col-guid { display: none; } /* Sembunyikan GUID di HP */
+            .col-source { width: 45%; }
+            .col-target { width: 55%; }
+            
+            /* 6. Layout Search */
+            .search-box { width: 120px; }
+            .toolbar { padding: 8px; gap: 8px; }
         }
     </style>
 </head>
 <body>
 
-<div id="loading">Memproses Data...</div>
+<div id="loading">
+    <div style="width: 40px; height: 40px; border: 4px solid #fff; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <div>Memproses...</div>
+</div>
+<style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
 
 <div class="container">
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h2 style="margin:0; font-size:18px;">S3SE Web</h2>
+            <button onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; color:var(--text-main); cursor:pointer; display:none;" id="closeSidebarBtn">&times;</button>
+        </div>
+
         <div class="card">
-            <h3>1. Sumber (Source)</h3>
-            <div class="drop-box" id="dropSrc" onclick="document.getElementById('fileSrc').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'source')">Upload STBL Asli</div>
+            <h3>1. File Sumber</h3>
+            <div class="drop-box" id="dropSrc" onclick="document.getElementById('fileSrc').click()">Upload STBL Asli</div>
             <input type="file" id="fileSrc" hidden accept=".stbl" onchange="loadFile('source', this.files[0])">
         </div>
         <div class="card">
-            <h3>2. Target (Terjemahan)</h3>
-            <div class="drop-box" id="dropTgt" onclick="document.getElementById('fileTgt').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'target')">Upload STBL Target</div>
+            <h3>2. File Target</h3>
+            <div class="drop-box" id="dropTgt" onclick="document.getElementById('fileTgt').click()">Upload STBL Target</div>
             <input type="file" id="fileTgt" hidden accept=".stbl" onchange="loadFile('target', this.files[0])">
         </div>
-        <div class="card" style="margin-top:auto"><div id="infoText" style="font-size:12px; color:#6b7280;">Siap.</div></div>
+        
+        <div class="card" style="margin-top:auto"><div id="infoText" style="font-size:12px; color:var(--text-muted);">Siap.</div></div>
     </div>
+    
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <div class="main">
         <div class="toolbar">
-            <button class="btn btn-primary" onclick="saveTargetFile()">💾 Simpan .STBL</button>
-            <div style="flex:1"></div>
-            <input type="text" class="search-box" id="searchInput" placeholder="Cari teks (Ctrl+F)..." onkeyup="handleSearch()">
+            <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+            
+            <button class="btn btn-primary" onclick="saveTargetFile()">💾 Simpan</button>
+            <input type="text" class="search-box" id="searchInput" placeholder="Cari..." onkeyup="handleSearch()">
+            
+            <button class="theme-btn" onclick="toggleTheme()" title="Ganti Tema">🌙</button>
         </div>
         
         <div class="grid-wrapper" id="gridContainer">
             <table id="grid">
-                <thead><tr><th class="col-guid">Instance GUID</th><th class="col-source">Teks Sumber</th><th class="col-target">Terjemahan</th></tr></thead>
+                <thead><tr><th class="col-guid">ID</th><th class="col-source">Sumber</th><th class="col-target">Terjemahan</th></tr></thead>
                 <tbody id="tbody"></tbody>
             </table>
         </div>
 
         <div class="pagination">
-            <button class="btn" onclick="changePage(-1)" id="btnPrev">❮ Prev</button>
-            <span id="pageInfo">Halaman 1</span>
-            <button class="btn" onclick="changePage(1)" id="btnNext">Next ❯</button>
+            <button class="btn" onclick="changePage(-1)" id="btnPrev">❮</button>
+            <span id="pageInfo">Hal 1</span>
+            <button class="btn" onclick="changePage(1)" id="btnNext">❯</button>
         </div>
     </div>
 </div>
 
 <script>
+    // --- UI LOGIC (Sidebar & Theme) ---
+    function toggleSidebar() {
+        const sb = document.getElementById('sidebar');
+        sb.classList.toggle('active');
+        // Tampilkan tombol close di sidebar hanya jika mode mobile
+        document.getElementById('closeSidebarBtn').style.display = sb.classList.contains('active') ? 'block' : 'none';
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        const btn = document.querySelector('.theme-btn');
+        if (body.getAttribute('data-theme') === 'dark') {
+            body.removeAttribute('data-theme');
+            btn.innerText = '🌙';
+            localStorage.setItem('theme', 'light');
+        } else {
+            body.setAttribute('data-theme', 'dark');
+            btn.innerText = '☀️';
+            localStorage.setItem('theme', 'dark');
+        }
+    }
+
+    // Load saved theme
+    if(localStorage.getItem('theme') === 'dark') {
+        document.body.setAttribute('data-theme', 'dark');
+        document.querySelector('.theme-btn').innerText = '☀️';
+    }
+
+    // --- CORE LOGIC (Sama seperti V7) ---
     let allData = []; let filteredData = []; let currentPage = 1; const ITEMS_PER_PAGE = 50; 
     function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
-    function handleDragOver(e) { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add('dragover'); }
-    function handleDrop(e, type) { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('dragover'); if(e.dataTransfer.files.length > 0) loadFile(type, e.dataTransfer.files[0]); }
-
+    
     function parseSTBL(buffer) {
         const view = new DataView(buffer); const decoder = new TextDecoder("utf-16le");
-        try { if (new TextDecoder().decode(buffer.slice(0, 4)) !== "STBL") throw new Error("Format Invalid"); } catch(e) { throw new Error("Bukan file STBL yang valid."); }
+        try { if (new TextDecoder().decode(buffer.slice(0, 4)) !== "STBL") throw new Error(); } catch(e) { throw new Error("Bukan file STBL valid."); }
         const count = view.getUint32(7, true); let offset = 17; let entries = [];
         for(let i=0; i<count; i++) {
             if(offset >= buffer.byteLength) break;
@@ -190,35 +306,27 @@
                         const exist = allData.find(r => r.keyBig === src.keyBig);
                         if(exist) exist.sourceStr = src.str; else allData.push({ ...src, sourceStr: src.str, targetStr: "" });
                     });
-                    const dz = document.getElementById('dropSrc'); dz.classList.add('filled'); dz.innerText = file.name; dz.title = file.name;
+                    const dz = document.getElementById('dropSrc'); dz.classList.add('filled'); dz.innerText = file.name;
+                    // Auto close sidebar on mobile after upload
+                    if(window.innerWidth <= 900) toggleSidebar();
                 } else {
                     if (allData.length === 0) allData = entries.map(e => ({ ...e, sourceStr: "", targetStr: e.str }));
                     else entries.forEach(tgt => {
                         const exist = allData.find(r => r.keyBig === tgt.keyBig);
-                        if(exist) exist.targetStr = tgt.str; else allData.push({ ...tgt, sourceStr: "(Key hilang)", targetStr: tgt.str });
+                        if(exist) exist.targetStr = tgt.str; else allData.push({ ...tgt, sourceStr: "(Missing)", targetStr: tgt.str });
                     });
-                    const dz = document.getElementById('dropTgt'); dz.classList.add('filled'); dz.innerText = file.name; dz.title = file.name;
+                    const dz = document.getElementById('dropTgt'); dz.classList.add('filled'); dz.innerText = file.name;
+                    if(window.innerWidth <= 900) toggleSidebar();
                 }
                 filteredData = allData; currentPage = 1; renderPage();
-                document.getElementById('infoText').innerText = `Total: ${allData.length.toLocaleString()} baris`;
+                document.getElementById('infoText').innerText = `${allData.length} baris`;
             } catch (err) { alert("Error: " + err.message); } finally { showLoading(false); }
         }, 50);
     }
 
-    // --- FUNGSI AUTO-RESIZE UTAMA ---
     function autoResize(el) {
-        // Reset dulu ke 'auto' agar bisa mengecil jika teks dihapus
-        el.style.height = 'auto'; 
-        // Set tinggi sesuai scrollHeight (tinggi konten asli)
-        el.style.height = el.scrollHeight + 'px';
-        
-        // BUG FIX: Jika Textarea lebih pendek dari Source Cell (karena source-nya panjang),
-        // CSS height:100% akan menanganinya. 
-        // Tapi kita perlu memastikan style height di-set dengan benar.
-        // Jika scrollHeight < parent height, biarkan CSS 100% bekerja (hapus style inline)
-        if (el.scrollHeight < el.parentElement.clientHeight) {
-             el.style.height = '100%';
-        }
+        el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px';
+        if (el.scrollHeight < el.parentElement.clientHeight) el.style.height = '100%';
     }
 
     function renderPage() {
@@ -230,7 +338,6 @@
         pageData.forEach(row => {
             const tr = document.createElement('tr');
             const val = row.targetStr !== undefined ? row.targetStr : row.sourceStr;
-            
             tr.innerHTML = `
                 <td class="cell-guid">${row.keyHex}</td>
                 <td class="cell-source">${row.sourceStr || ""}</td>
@@ -242,21 +349,13 @@
         });
         tbody.appendChild(frag);
         document.getElementById('gridContainer').scrollTop = 0;
-        
-        // --- TRIGGER RESIZE SETELAH RENDER ---
-        // Ini memastikan saat halaman dibuka, kotak langsung pas ukurannya
-        setTimeout(() => {
-            document.querySelectorAll('textarea.edit-box').forEach(el => autoResize(el));
-        }, 0);
-        
+        setTimeout(() => { document.querySelectorAll('textarea.edit-box').forEach(el => autoResize(el)); }, 0);
         updatePagination();
     }
 
     window.handleInput = (el, keyHex) => {
         const item = allData.find(d => d.keyHex === keyHex);
         if(item) item.targetStr = el.value;
-        
-        // PANGGIL FUNGSI AUTO RESIZE SAAT MENGETIK
         autoResize(el);
     };
 
@@ -269,8 +368,8 @@
 
     function changePage(delta) {
         const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE) || 1;
-        const newPage = currentPage + delta;
-        if(newPage > 0 && newPage <= totalPages) { currentPage = newPage; renderPage(); }
+        const new = currentPage + delta;
+        if(new > 0 && new <= totalPages) { currentPage = new; renderPage(); }
     }
 
     let searchTimer;
@@ -280,8 +379,7 @@
             const term = document.getElementById('searchInput').value.toLowerCase();
             filteredData = !term ? allData : allData.filter(i => 
                 (i.sourceStr && i.sourceStr.toLowerCase().includes(term)) ||
-                (i.targetStr && i.targetStr.toLowerCase().includes(term)) ||
-                (i.keyHex.toLowerCase().includes(term))
+                (i.targetStr && i.targetStr.toLowerCase().includes(term))
             );
             currentPage = 1; renderPage();
         }, 300);
