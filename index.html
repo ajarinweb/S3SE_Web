@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>S3SE Web Editor</title>
     <style>
-        /* --- 1. SETTING WARNA (VARIABLES) --- */
+        /* --- 1. SETTING WARNA (THEMING) --- */
         :root {
             --primary: #0078d4;
             --bg-body: #f3f4f6;
@@ -14,13 +14,10 @@
             --text-muted: #6b7280;
             --border: #e5e7eb;
             --table-head: #f9fafb;
-            --table-hover: #f0f9ff;
-            --input-bg: #ffffff;
             --guid-bg: #f9fafb;
-            --scrollbar: #ccc;
+            --hover-bg: #f3f4f6;
         }
 
-        /* DARK MODE PALETTE */
         [data-theme="dark"] {
             --primary: #4dabf5;
             --bg-body: #121212;
@@ -29,10 +26,8 @@
             --text-muted: #a0a0a0;
             --border: #333333;
             --table-head: #252525;
-            --table-hover: #2a2a2a;
-            --input-bg: #1e1e1e;
             --guid-bg: #252525;
-            --scrollbar: #444;
+            --hover-bg: #2a2a2a;
         }
 
         * { box-sizing: border-box; }
@@ -41,50 +36,57 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
             background: var(--bg-body); color: var(--text-main);
             margin: 0; padding: 0; height: 100vh; 
-            display: flex; flex-direction: column;
-            transition: background 0.3s, color 0.3s;
+            display: flex; flex-direction: column; overflow: hidden;
         }
 
         /* --- LAYOUT UTAMA --- */
-        .container { display: flex; flex: 1; overflow: hidden; height: 100%; position: relative; }
+        .container { display: flex; flex: 1; height: 100%; position: relative; overflow: hidden; }
 
-        /* --- SIDEBAR (OFF-CANVAS di MOBILE) --- */
+        /* --- SIDEBAR --- */
         .sidebar { 
             width: 280px; min-width: 280px; 
             background: var(--bg-panel); 
             border-right: 1px solid var(--border);
             display: flex; flex-direction: column; gap: 15px; padding: 20px;
-            overflow-y: auto; z-index: 50;
-            transition: transform 0.3s ease, background 0.3s;
+            overflow-y: auto; 
+            z-index: 50; /* Z-Index Tinggi agar di atas konten */
+            transition: transform 0.3s ease;
+        }
+
+        /* Tombol Close di dalam Sidebar (Hanya untuk HP) */
+        .close-sidebar-btn { 
+            display: none; background: none; border: none; font-size: 24px; color: var(--text-main); cursor: pointer; margin-left: auto; 
         }
 
         /* --- MAIN AREA --- */
         .main { 
             flex: 1; display: flex; flex-direction: column; 
-            background: var(--bg-panel); overflow: hidden; position: relative;
-            transition: background 0.3s;
+            background: var(--bg-panel); overflow: hidden; position: relative; 
+            width: 100%; /* Pastikan lebar penuh */
         }
 
         /* --- TOOLBAR (HEADER) --- */
         .toolbar { 
             padding: 10px 15px; border-bottom: 1px solid var(--border); 
             display: flex; align-items: center; gap: 10px; 
-            background: var(--bg-panel); min-height: 50px;
+            background: var(--bg-panel); min-height: 60px;
+            z-index: 40; /* Pastikan di atas tabel */
         }
 
-        /* HAMBURGER BUTTON (Mobile Only) */
+        /* Hamburger Button (Default Hidden di Desktop) */
         .menu-btn {
-            display: none; /* Hidden on Desktop */
+            display: none; 
             background: transparent; border: none; font-size: 24px; cursor: pointer; color: var(--text-main); padding: 5px;
         }
 
-        /* THEME TOGGLE BUTTON */
+        /* Theme Toggle (Selalu Muncul) */
         .theme-btn {
             background: transparent; border: 1px solid var(--border); 
-            border-radius: 50%; width: 32px; height: 32px; 
+            border-radius: 50%; width: 36px; height: 36px; 
             cursor: pointer; display: flex; align-items: center; justify-content: center;
-            margin-left: auto; color: var(--text-main);
+            font-size: 18px; color: var(--text-main); transition: 0.2s;
         }
+        .theme-btn:hover { background: var(--hover-bg); }
 
         /* --- COMPONENTS --- */
         .card { 
@@ -102,7 +104,7 @@
         .drop-box:hover { border-color: var(--primary); color: var(--primary); }
         .drop-box.filled { background: rgba(0, 120, 212, 0.1); border-style: solid; border-color: var(--primary); color: var(--primary); font-weight: 600; }
 
-        /* --- TABLE STYLE --- */
+        /* --- TABLE STYLE (FIXED HEIGHT LOGIC) --- */
         .grid-wrapper { flex: 1; overflow: auto; position: relative; }
         
         table { width: 100%; border-collapse: collapse; font-size: 14px; table-layout: fixed; }
@@ -114,13 +116,13 @@
         }
         
         /* KOLOM */
-        .col-guid { width: 150px; }
+        .col-guid { width: 140px; }
         .col-source { width: 40%; } 
         .col-target { width: auto; } 
 
         td { 
             border-bottom: 1px solid var(--border); 
-            vertical-align: top; padding: 0; height: 1px; 
+            vertical-align: top; padding: 0; height: 1px; /* KUNCI: Paksa sel ikut tinggi row */
         }
         
         .cell-guid { 
@@ -144,50 +146,47 @@
         }
         textarea.edit-box:focus { background: rgba(0, 120, 212, 0.05); box-shadow: inset 3px 0 0 var(--primary); }
 
-        /* --- BUTTONS & INPUTS --- */
-        .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px; border: 1px solid var(--border); background: var(--bg-panel); color: var(--text-main); }
-        .btn:hover { background: var(--bg-body); }
+        /* --- UI ELEMENTS --- */
+        .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px; border: 1px solid var(--border); background: var(--bg-panel); color: var(--text-main); white-space: nowrap; }
+        .btn:hover { background: var(--hover-bg); }
         .btn-primary { background: var(--primary); color: white; border: none; }
+        
         .search-box { 
+            flex: 1; /* Search box mengisi ruang kosong */
             padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; 
-            width: 200px; font-size: 13px; outline: none; background: var(--input-bg); color: var(--text-main);
+            font-size: 13px; outline: none; background: var(--bg-panel); color: var(--text-main);
+            min-width: 0; /* Penting untuk flexbox */
         }
         .search-box:focus { border-color: var(--primary); }
         
         .pagination { padding: 10px 15px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-panel); font-size: 13px; color: var(--text-muted); }
-        #loading { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; font-weight: 500; color: white; }
+        #loading { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 200; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; font-weight: 500; color: white; }
 
-        /* --- OVERLAY UNTUK MOBILE --- */
+        /* OVERLAY GELAP SAAT SIDEBAR BUKA DI HP */
         .sidebar-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40;
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 45;
+            transition: opacity 0.3s;
         }
 
-        /* --- RESPONSIVE LOGIC (MOBILE) --- */
+        /* --- RESPONSIVE LOGIC --- */
         @media (max-width: 900px) {
-            /* 1. Sidebar sembunyi (Off-Canvas) */
+            /* 1. Sidebar Mode Mobile (Off-Canvas) */
             .sidebar {
-                position: fixed; left: 0; top: 0; bottom: 0;
-                transform: translateX(-100%); /* Geser ke kiri layar */
-                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+                position: fixed; top: 0; bottom: 0; left: 0;
+                transform: translateX(-100%); /* Sembunyi ke kiri */
+                box-shadow: 2px 0 10px rgba(0,0,0,0.2);
             }
+            .sidebar.active { transform: translateX(0); } /* Muncul */
             
-            /* 2. Sidebar saat aktif (muncul) */
-            .sidebar.active { transform: translateX(0); }
-            
-            /* 3. Overlay muncul saat sidebar aktif */
+            /* 2. Tombol & Overlay Mobile */
+            .menu-btn { display: block; }
+            .close-sidebar-btn { display: block; }
             .sidebar.active + .sidebar-overlay { display: block; }
 
-            /* 4. Tampilkan tombol Menu */
-            .menu-btn { display: block; }
-            
-            /* 5. Tabel di HP */
-            .col-guid { display: none; } /* Sembunyikan GUID di HP */
-            .col-source { width: 45%; }
-            .col-target { width: 55%; }
-            
-            /* 6. Layout Search */
-            .search-box { width: 120px; }
-            .toolbar { padding: 8px; gap: 8px; }
+            /* 3. Tweak Tabel Mobile */
+            .col-guid { display: none; } /* Hide ID */
+            .col-source { width: 40%; }
+            .col-target { width: 60%; }
         }
     </style>
 </head>
@@ -201,9 +200,9 @@
 
 <div class="container">
     <div class="sidebar" id="sidebar">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <h2 style="margin:0; font-size:18px;">S3SE Web</h2>
-            <button onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; color:var(--text-main); cursor:pointer; display:none;" id="closeSidebarBtn">&times;</button>
+            <button class="close-sidebar-btn" onclick="toggleSidebar()">&times;</button>
         </div>
 
         <div class="card">
@@ -229,7 +228,7 @@
             <button class="btn btn-primary" onclick="saveTargetFile()">💾 Simpan</button>
             <input type="text" class="search-box" id="searchInput" placeholder="Cari..." onkeyup="handleSearch()">
             
-            <button class="theme-btn" onclick="toggleTheme()" title="Ganti Tema">🌙</button>
+            <button class="theme-btn" onclick="toggleTheme()" title="Mode Gelap/Terang">🌙</button>
         </div>
         
         <div class="grid-wrapper" id="gridContainer">
@@ -241,19 +240,16 @@
 
         <div class="pagination">
             <button class="btn" onclick="changePage(-1)" id="btnPrev">❮</button>
-            <span id="pageInfo">Hal 1</span>
+            <span id="pageInfo">Halaman 1</span>
             <button class="btn" onclick="changePage(1)" id="btnNext">❯</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- UI LOGIC (Sidebar & Theme) ---
+    // --- UI INTERACTION ---
     function toggleSidebar() {
-        const sb = document.getElementById('sidebar');
-        sb.classList.toggle('active');
-        // Tampilkan tombol close di sidebar hanya jika mode mobile
-        document.getElementById('closeSidebarBtn').style.display = sb.classList.contains('active') ? 'block' : 'none';
+        document.getElementById('sidebar').classList.toggle('active');
     }
 
     function toggleTheme() {
@@ -269,14 +265,13 @@
             localStorage.setItem('theme', 'dark');
         }
     }
-
     // Load saved theme
     if(localStorage.getItem('theme') === 'dark') {
         document.body.setAttribute('data-theme', 'dark');
         document.querySelector('.theme-btn').innerText = '☀️';
     }
 
-    // --- CORE LOGIC (Sama seperti V7) ---
+    // --- CORE LOGIC ---
     let allData = []; let filteredData = []; let currentPage = 1; const ITEMS_PER_PAGE = 50; 
     function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
     
@@ -307,8 +302,7 @@
                         if(exist) exist.sourceStr = src.str; else allData.push({ ...src, sourceStr: src.str, targetStr: "" });
                     });
                     const dz = document.getElementById('dropSrc'); dz.classList.add('filled'); dz.innerText = file.name;
-                    // Auto close sidebar on mobile after upload
-                    if(window.innerWidth <= 900) toggleSidebar();
+                    if(window.innerWidth <= 900) toggleSidebar(); // Auto close on mobile
                 } else {
                     if (allData.length === 0) allData = entries.map(e => ({ ...e, sourceStr: "", targetStr: e.str }));
                     else entries.forEach(tgt => {
@@ -325,8 +319,17 @@
     }
 
     function autoResize(el) {
-        el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px';
-        if (el.scrollHeight < el.parentElement.clientHeight) el.style.height = '100%';
+        // Reset height
+        el.style.height = 'auto'; 
+        // Set new height based on content
+        el.style.height = el.scrollHeight + 'px';
+        
+        // CSS Fallback: Jika scrollHeight lebih kecil dari tinggi sel (karena source panjang),
+        // CSS height: 100% akan otomatis menangani agar kotak tetap penuh.
+        // Script ini hanya bertugas MEMPERBESAR kotak jika terjemahan LEBIH PANJANG dari sumber.
+        if (el.scrollHeight < el.parentElement.clientHeight) {
+            el.style.height = '100%';
+        }
     }
 
     function renderPage() {
@@ -349,6 +352,8 @@
         });
         tbody.appendChild(frag);
         document.getElementById('gridContainer').scrollTop = 0;
+        
+        // Auto-Resize saat render
         setTimeout(() => { document.querySelectorAll('textarea.edit-box').forEach(el => autoResize(el)); }, 0);
         updatePagination();
     }
