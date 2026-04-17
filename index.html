@@ -2,239 +2,529 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S3SE Web Editor v1.4 (No Scroll Mobile)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>S3SE Web - Glassmorphism Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        /* --- 1. SETTING WARNA & TEMA --- */
-        :root {
-            --primary: #0078d4;
-            --bg: #f3f4f6;
-            --bg-panel: #ffffff;
-            --text: #374151;
-            --border: #e5e7eb;
-            --th-bg: #f9fafb;
-            --guid-bg: #f9fafb;
-            --hover-row: #f0f9ff;
-        }
+        /* =========================================================
+   1. VARIABEL TEMA & RESET
+   ========================================================= */
+:root { --primary: #0a84ff; --primary-hover: #006ee6; --fp-bg-color: rgba(255, 255, 255, 0.25); --fp-highlight: rgba(255, 255, 255, 0.75); --fp-red: #fb4268; --fp-grey: #444739; --text: #f0f0f5; --text-main: #ffffff; --text-muted: #a1a1aa; --text-dim: #a0a0b8; --glass-bg: rgba(30, 30, 35, 0.25); --glass-border: rgba(30, 30, 35, 0.18); --glass-hover: rgba(255, 255, 255, 0.08); --glass-active: rgba(0, 0, 0, 0.3); --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15); --blur-intensity: blur(10px); --mono: 'JetBrains Mono', monospace; --sans: 'Inter', sans-serif; --radius: 12px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: var(--text-main); height: 100vh; overflow: hidden; background-color: #0f0f13; position: relative; transition: background 0.3s, color 0.3s; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(150,150,150,0.3); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(150,150,150,0.5); }
 
-        [data-theme="dark"] {
-            --primary: #4dabf5;
-            --bg: #121212;
-            --bg-panel: #1e1e1e;
-            --text: #e0e0e0;
-            --border: #333333;
-            --th-bg: #252525;
-            --guid-bg: #252525;
-            --hover-row: #2a2a2a;
-        }
+/* =========================================================
+   2. KEYFRAMES ANIMASI
+   ========================================================= */
+@keyframes float { 100% { transform: translate(100px, 50px) rotate(45deg); } }
+@keyframes statusMarquee { 0%, 15% { transform: translateX(0); } 85%, 100% { transform: translateX(var(--scroll-amount)); } }
+@keyframes navItemSqueeze { 0% { transform: scale(1); } 50% { transform: scale(0.85); } 100% { transform: scale(1); } }
+@keyframes toastMasuk { 100% { right: 0; } }
+@keyframes toastKeluar { 100% { right: -400px; opacity: 0; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes spin { 100% { transform: rotate(360deg); } }
 
-        * { box-sizing: border-box; }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background: var(--bg); color: var(--text);
-            margin: 0; padding: 0; height: 100vh; 
-            display: flex; flex-direction: column;
-            transition: background 0.2s, color 0.2s;
-        }
+/* =========================================================
+   3. BACKGROUND & LAYOUT UTAMA
+   ========================================================= */
+.bg-anim { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
+.blob { position: absolute; filter: blur(90px); border-radius: 50%; animation: float 20s infinite ease-in-out alternate; opacity: 0.6; }
+.blob-1 { width: 50vw; height: 50vw; background: #ff2a5f; top: -10%; left: -10%; }
+.blob-2 { width: 40vw; height: 40vw; background: #0078d4; bottom: -20%; right: -10%; animation-delay: -5s; }
+.blob-3 { width: 35vw; height: 35vw; background: #7b1fa2; top: 40%; left: 40%; animation-delay: -10s; }
+.app-container { display: flex; flex-direction: column; height: 100vh; padding: 12px; gap: 12px; }
 
-        /* --- LAYOUT UTAMA --- */
-        .container { display: flex; flex: 1; overflow: hidden; height: 100%; position: relative; }
-        
-        /* --- SIDEBAR --- */
-        .sidebar { 
-            width: 280px; 
-            min-width: 280px; 
-            background: var(--bg-panel); 
-            border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; gap: 15px; padding: 20px;
-            overflow-y: auto; z-index: 50;
-            
-            /* PC: Selalu Terbuka */
-            position: relative;
-            transform: none;
-            transition: transform 0.3s ease;
-        }
-        
-        .close-sidebar-btn { display: none; background: none; border: none; font-size: 24px; color: var(--text); cursor: pointer; margin-left: auto; }
+/* =========================================================
+   4. TOP BAR & MENU
+   ========================================================= */
+.top-bar { display: flex; align-items: center; gap: 20px; padding: 8px 16px; border-radius: 8px; flex-shrink: 0; position: relative; z-index: 100; background: transparent; border: none; box-shadow: none; }
+.top-bar::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--glass-bg); backdrop-filter: var(--blur-intensity); -webkit-backdrop-filter: var(--blur-intensity); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); pointer-events: none; }
+.logo { font-weight: 600; color: var(--text); display: flex; gap: 6px; align-items: center; letter-spacing: 0.5px; }
+.nav-menu { display: flex; gap: 4px; }
+.nav-item { font-size: 13px; display: flex; padding: 4px 12px; border-radius: 12px; cursor: pointer; color: var(--text-dim); transition: background 0.2s, color 0.2s; position: relative; }
+.nav-item.disabled { opacity: 0.4; pointer-events: none; }
+.nav-item:hover { background: var(--glass-hover); color: var(--text); }
+.nav-item:hover .dropdown, .has-submenu:hover > .submenu { opacity: 1; visibility: visible; display: flex; flex-direction: column; gap: 2px; }
+.top-status-wrapper { margin-left: 10px; padding: 4px 12px; border-radius: 20px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); max-width: 250px; overflow: hidden; display: flex; align-items: center; cursor: default; }
+.top-status-text { font-family: var(--mono); font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 100%; }
+.top-status-wrapper:hover .top-status-text { text-overflow: clip; }
 
-        .main { 
-            flex: 1; display: flex; flex-direction: column; 
-            background: var(--bg-panel); overflow: hidden; position: relative; width: 100%;
-        }
+/* =========================================================
+   5. DROPDOWN & CONTEXT MENU
+   ========================================================= */
+.dropdown { position: absolute; top: 100%; left: 0; margin: 8px 6px 6px -10px; border-radius: 18px; min-width: 180px; opacity: 0; visibility: hidden; list-style: none; padding: 6px; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: transparent; border: none; box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+.dropdown::before { content: ''; position: absolute; top: -10px; left: 0; width: 100%; height: 10px; }
+.dropdown li, .submenu li, .ctx-item { padding: 6px 12px; border-radius: 15px; color: var(--text-main); cursor: pointer; font-size: 12px; display: flex; justify-content: space-between; transition: 0.2s ease; position: relative; z-index: 5; }
+.dropdown li:hover, .submenu li:hover, .ctx-item:hover { background: var(--primary); color: #fff; }
+.dropdown li.disabled { opacity: 0.5; pointer-events: none; }
+.shortcut { color: var(--text-muted); font-size: 10px; }
+.dropdown li:hover .shortcut { color: rgba(255,255,255,0.7); }
+.has-submenu { position: relative; padding-right: 24px; }
+.has-submenu::after { content: '▸'; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 10px; color: var(--text-muted); pointer-events: none; }
+.submenu { position: absolute; top: -6px; left: 100%; margin-left: 10px; border-radius: 18px; box-shadow: var(--glass-shadow); min-width: 170px; opacity: 0; visibility: hidden; list-style: none; padding: 6px; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 100; background: transparent; border: none; }
+.submenu.flip-left { left: auto; right: 100%; margin-left: 0; margin-right: 2px; }
+#context-menu { position: fixed; z-index: 3000; width: 180px; border-radius: 18px; padding: 6px; opacity: 0; visibility: hidden; transform: scale(0.95); transition: 0.15s ease; background: transparent; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+#context-menu.visible { opacity: 1; visibility: visible; transform: scale(1); }
+.ctx-divider { height: 1px; background: var(--glass-border); margin: 4px 0; }
 
-        /* --- TOOLBAR --- */
-        .toolbar { 
-            padding: 10px 20px; border-bottom: 1px solid var(--border); 
-            display: flex; align-items: center; gap: 12px; background: var(--bg-panel);
-            flex-wrap: wrap; z-index: 40;
-        }
+/* =========================================================
+   6. UI COMPONENTS (BUTTONS, CARDS)
+   ========================================================= */
+.btn { padding: 8px 16px; border-radius: 18px; cursor: pointer; font-weight: 500; font-size: 13px; font-family: 'Inter', sans-serif; transition: 0.2s ease; border: 1px solid var(--glass-border); background: var(--glass-hover); color: var(--text-main); display: inline-flex; align-items: center; justify-content: center; }
+.btn:hover:not(:disabled) { background: rgba(150,150,150,0.2); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: var(--primary); border: none; color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+#empty-state { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; padding: 40px; animation: fadeIn 0.5s ease; transition: opacity 0.5s ease; }
+.welcome-grid { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+.welcome-card { background: var(--glass-bg); backdrop-filter: var(--blur-intensity); -webkit-backdrop-filter: var(--blur-intensity); border: 1px solid var(--glass-border); border-radius: 24px; width: 220px; padding: 30px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 10px 30px rgba(0,0,0,0.2); color: var(--text-main); }
+.welcome-card:hover { transform: translateY(-10px); background: rgba(255,255,255,0.1); border-color: var(--primary); }
+.welcome-card i { font-size: 40px; margin-bottom: 15px; font-style: normal; }
+.welcome-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.welcome-card p { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
 
-        .menu-btn { display: none; background: none; border: none; font-size: 24px; color: var(--text); cursor: pointer; padding: 0 10px 0 0; }
+/* =========================================================
+   7. TABLE & EDITOR VIEW
+   ========================================================= */
+#editor-view { flex: 1; display: none; flex-direction: column; position: relative; overflow: hidden; animation: fadeIn 0.5s ease; }
+.table-container { flex: 1; overflow: auto; padding-bottom: 100px; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+thead th { position: sticky; top: 0; background: var(--glass-bg); backdrop-filter: var(--blur-intensity); -webkit-backdrop-filter: var(--blur-intensity); border-bottom: 1px solid var(--glass-border); text-align: left; padding: 12px 20px; font-size: 12px; font-weight: 600; color: var(--text-muted); z-index: 10; text-transform: uppercase; letter-spacing: 0.5px; }
+.col-guid { width: 220px; } .col-source { width: 35%; } .col-target { width: auto; }
+td { border-bottom: 1px solid var(--glass-border); vertical-align: top; padding: 0; height: 1px; transition: background 0.3s ease; }
+.highlight-row td { background: rgba(10, 132, 255, 0.2) !important; }
+.cell-guid { padding: 15px 20px; font-family: 'JetBrains Mono', Consolas, monospace; color: var(--text-muted); font-size: 12px; background: rgba(0,0,0,0.1); border-right: 1px solid var(--glass-border); word-break: break-all; height: 100%; user-select: all; }
+.cell-source { padding: 15px 20px; color: var(--text-main); white-space: pre-wrap; word-wrap: break-word; border-right: 1px solid var(--glass-border); line-height: 1.6; font-size: 13px; height: 100%; }
+.cell-target { padding: 0; height: 100%; position: relative; background: transparent; }
+textarea.edit-box { width: 100%; height: 100%; min-height: 100%; border: none; padding: 15px 20px; font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.6; resize: none; display: block; background: transparent; color: var(--text-main); outline: none; overflow: hidden; box-sizing: border-box; transition: background 0.2s ease; }
+textarea.edit-box:focus { background: rgba(10, 132, 255, 0.05); }
 
-        .theme-btn { 
-            background: none; border: 1px solid var(--border); border-radius: 50%; 
-            width: 32px; height: 32px; font-size: 16px; margin-left: auto; 
-            color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer;
-        }
-        .theme-btn:hover { background: var(--th-bg); }
+/* =========================================================
+   8. FPGLASS COMPONENTS (BASE LIQUID GLASS)
+   ========================================================= */
+.fpglass-container, .sptxtglass-container, .spstglass-container { position: relative; display: flex; align-items: center; background: transparent; overflow: hidden; color: var(--text-main); box-shadow: 0 6px 6px rgba(0, 0, 0, 0.2), 0 0 20px rgba(0, 0, 0, 0.1); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2); }
+.sptxtglass-container, .spstglass-container { width: 360px; max-width: 360px; margin: 0; pointer-events: auto; flex: none; transition: none; }
+.fpglass-container { border-radius: 2rem; flex: 1 1 auto; }
+.sptxtglass-container { border-radius: 3rem; }
+.spstglass-container { padding: 6px; border-radius: 1.7rem; }
+.fpglass-container--rounded { border-radius: 3rem; }
+.fpglass-container--large, .fpglass-container--medium { flex: 1 1 auto; }
+.fpglass-container--small { flex: 0 1 auto; }
+.fpglass-filter, .fpglass-overlay, .fpglass-specular { position: absolute; inset: 0; border-radius: inherit; }
+.fpglass-filter { z-index: 0; backdrop-filter: blur(4px); filter: url(#lensFilter) saturate(120%) brightness(1.15); }
+.fpglass-overlay { z-index: 1; background: var(--fp-bg-color); }
+.fpglass-specular { z-index: 2; box-shadow: inset 1px 1px 0 var(--fp-highlight), inset 0 0 5px var(--fp-highlight); }
+.fpglass-content { position: relative; z-index: 3; display: flex; flex: 1 1 auto; align-items: center; padding: 6px 12px; gap: 0.5rem; }
+.fpglass-content__link { margin-bottom: -1px; margin-top: 6px; transition: transform 0.2s ease-out; }
+.fpglass-content__link img { width: 78px; }
+.fpglass-content__link:hover { transform: scale(1.1); }
+.fpglass-content__link:active { transform: scale(0.95); }
 
-        /* UI ASLI v1.2 */
-        .card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-        h3 { margin: 0; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+/* =========================================================
+   9. FLOATING PAGINATION
+   ========================================================= */
+.floating-pagination { display: flex; flex-direction: column; gap: 1rem; flex-wrap: wrap; justify-content: center; position: fixed; bottom: 9px; left: 50%; transform: translateX(-50%); border-radius: 50px; align-items: center; padding: 8px 12px; transition: opacity 0.3s ease, transform 0.3s ease; }
+.floating-pagination.hidden-by-search { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(20px) scale(0.9); }
+.fpglass-item { background: transparent; border: none; outline: none; display: flex; flex-direction: column; align-items: center; text-align: center; color: var(--fp-grey); transition: background 0.3s ease, color 0.3s ease, transform 0.25s ease-out; cursor: pointer; padding: 10px 32px; border-radius: 3rem; margin: 0; }
+.fpglass-item.squeezed { animation: navItemSqueeze 440ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.fpglass-item:hover:not(:disabled), .fpglass-item:active:not(:disabled) { background: rgba(0, 0, 0, 0.25); }
+.fpglass-item:hover:not(:disabled) svg, .fpglass-item:active:not(:disabled) svg { fill: var(--fp-red); }
+.fpglass-item.disabled { opacity: 0.3; cursor: not-allowed; }
+.fpglass-item svg { fill: var(--text-main); height: 15px; filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.25)); transition: transform 0.25s ease-out, fill 0.3s ease; pointer-events: none; }
+.fpglass-item:active:not(:disabled) svg { transform: scale(0.95); }
+.bubble-text { font-size: 13px; font-weight: 800; color: var(--text-main); font-family: 'Inter', sans-serif; pointer-events: none; }
+.bubble-btn { background: transparent; border: none; outline: none; display: flex; align-items: center; justify-content: center; cursor: inherit; }
 
-        .drop-box { 
-            border: 2px dashed #d1d5db; padding: 20px 10px; text-align: center; 
-            border-radius: 6px; cursor: pointer; font-size: 13px; color: #6b7280; 
-            transition: 0.2s; background: var(--th-bg);
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px;
-        }
-        .drop-box:hover, .drop-box.dragover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
-        .drop-box.filled { background: rgba(0, 120, 212, 0.1); border-style: solid; border-color: var(--primary); color: var(--primary); font-weight: 500; }
+/* =========================================================
+   10. SEARCH MODAL (FLOATING)
+   ========================================================= */
+#search-modal { position: fixed !important; bottom: 12px !important; left: 0; right: 0; width: 100% !important; z-index: 2000; display: flex !important; flex-direction: column !important; align-items: center !important; gap: 8px !important; pointer-events: none !important; background: transparent !important; }
+#searchSubmenu { opacity: 0; transform: translateY(20px) scale(0.95); pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1); }
+#searchDialogBox { opacity: 0; transform: translateY(40px) scale(0.95); pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1); }
+#search-modal.active #searchSubmenu { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; transition-delay: 0.1s; }
+#search-modal.active #searchDialogBox { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; transition-delay: 0s; }
+#search-modal .fpglass-content { width: 100% !important; box-sizing: border-box !important; padding: 10px 16px !important; flex-wrap: nowrap !important; gap: 10px !important; justify-content: center !important; }
+.search-input { flex: 1; width: 100%; padding: 8px 12px; border: none; border-radius: 20px; font-size: 13px; font-family: var(--sans)'Inter', sans-serif; background: rgba(0, 0, 0, 0.25); color: var(--text-main); outline: none; margin: 0; box-sizing: border-box; }
+.search-input:focus { background: rgba(0,0,0,0.4); box-shadow: inset 0 0 0 1px var(--primary); }
+.search-action-btn { background: transparent; border: none; color: var(--text-muted); font-size: 16px; flex-shrink: 0; cursor: pointer; padding: 4px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+.search-action-btn:hover { color: var(--fp-red); background: rgba(255, 255, 255, 0.1); }
+.search-mode-container { display: flex; background: rgba(0,0,0,0.25); border-radius: 18px; padding: 4px; width: 100%; margin-bottom: 8px; }
+.search-mode-label { flex: 1; text-align: center; padding: 6px; font-size: 11px; cursor: pointer; border-radius: 15px; color: var(--text); transition: 0.2s; margin: 0; }
+.search-mode-input { display: none; }
+.search-mode-input:checked + .search-mode-label { background: rgba(255,255,255,0.15); color: var(--text-main); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+.search-info-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+#navButtonsContainer .btn-icon { padding: 4px 10px; font-size: 11px; background: rgba(255,255,255,0.1); border-radius: 6px; border: none; color: #fff; cursor: pointer; transition: 0.2s; }
+#navButtonsContainer .btn-icon:hover:not(:disabled) { background: var(--primary); }
+#navButtonsContainer .btn-icon:disabled { opacity: 0.3; cursor: not-allowed; }
 
-        /* --- TABLE STYLE (REVISI NO SCROLL) --- */
-        .grid-wrapper { flex: 1; overflow: auto; position: relative; }
-        
-        table { 
-            width: 100%; border-collapse: collapse; font-size: 14px; table-layout: fixed; 
-            /* HAPUS MIN-WIDTH AGAR TIDAK SCROLL DI HP */
-        }
-        
-        thead th { 
-            position: sticky; top: 0; background: var(--th-bg); 
-            border-bottom: 2px solid var(--border); text-align: left; 
-            padding: 12px; color: var(--text); z-index: 10; font-weight: 600;
-        }
-        
-        /* LEBAR KOLOM (DEFAULT PC) */
-        .col-guid { width: 160px; }
-        .col-source { width: 40%; } 
-        .col-target { width: auto; } 
+/* =========================================================
+   11. STBL & MODAL OVERLAYS
+   ========================================================= */
+#stbl-mapping-modal, #guid-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 4000; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; }
+#stbl-mapping-modal.active { opacity: 1; }
+#stbl-mapping-modal .fpglass-filter { backdrop-filter: blur(20px) !important; filter: saturate(180%) brightness(0.7) !important; }
+.stbl-popup-dialog { width: 380px; max-width: 90%; flex-direction: column; pointer-events: auto; transform: none !important; opacity: 0; translate: 0 20px; transition: opacity 0.3s ease, translate 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+#stbl-mapping-modal.active .stbl-popup-dialog, #guid-modal[style*="opacity: 1"] .stbl-popup-dialog { opacity: 1; translate: 0 0; }
+.stbl-select { width: 100%; padding: 8px 32px 8px 12px; border-radius: 18px; cursor: pointer; appearance: none; -webkit-appearance: none; -moz-appearance: none; background: rgba(0,0,0,0.25) url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center; background-size: 16px; color: var(--text-main); border: 1px solid var(--glass-border); font-family: var(--sans); font-size: 12px; outline: none; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
+.stbl-select:focus { box-shadow: inset 0 0 0 1px var(--primary); }
+.stbl-select option { background: #1e1e23; color: #fff; }
 
-        td { border-bottom: 1px solid var(--border); vertical-align: top; padding: 0; height: 1px; }
-        
-        .cell-guid { 
-            padding: 12px; font-family: 'Consolas', monospace; color: #9ca3af; 
-            font-size: 12px; background: var(--guid-bg); user-select: all; 
-            word-break: break-all; /* Agar ID panjang turun ke bawah */
-            height: 100%;
-        }
-        
-        .cell-source { 
-            padding: 12px; color: var(--text); background: var(--bg-panel); 
-            white-space: pre-wrap; word-wrap: break-word; /* Agar teks panjang turun ke bawah */
-            border-right: 1px solid var(--border);
-            line-height: 1.5; height: 100%;
-        }
-        
-        .cell-target { padding: 0; height: 100%; background: var(--bg-panel); }
+#apple-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 10000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; }
+#apple-modal-overlay.active { opacity: 1; }
+.apple-modal-box { position: relative; width: 320px; border-radius: 2rem; display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: 28px; box-shadow: 0 24px 48px rgba(0,0,0,0.5); background: transparent !important; border: none !important; transform: none !important; opacity: 0; translate: 0 20px; transition: opacity 0.3s ease, translate 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+#apple-modal-overlay.active .apple-modal-box { opacity: 1; translate: 0 0; }
+.apple-modal-icon img { width: 56px; height: 56px; margin-bottom: 12px; }
+.apple-modal-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 8px; padding: 0 20px; line-height: 1.3; }
+.apple-modal-text { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.4; padding: 0 20px 24px; }
+.apple-modal-buttons { width: 100%; display: flex; flex-direction: column; padding: 0 16px 16px; gap: 8px; }
+.apple-btn { padding: 12px; border-radius: 18px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s ease; outline: none; }
+.apple-btn-primary { background: var(--primary); color: #fff; } .apple-btn-primary:hover { background: var(--primary-hover); }
+.apple-btn-secondary { background: rgba(255,255,255,0.12); color: #fff; } .apple-btn-secondary:hover { background: rgba(255,255,255,0.2); }
+.apple-btn-danger { background: rgba(255, 69, 58, 0.15); color: #ff453a; border: 1px solid rgba(255, 69, 58, 0.3); } .apple-btn-danger:hover { background: rgba(255, 69, 58, 0.3); }
 
-        textarea.edit-box { 
-            width: 100%; height: 100%; min-height: 100%;
-            border: none; padding: 12px; 
-            font-family: inherit; font-size: 14px; line-height: 1.5;
-            resize: none; display: block; background: transparent; color: var(--text);
-            outline: none; overflow: hidden; box-sizing: border-box;
-            word-wrap: break-word; /* Agar teks edit turun ke bawah */
-        }
-        textarea.edit-box:focus { background: rgba(0, 120, 212, 0.05); box-shadow: inset 4px 0 0 var(--primary); }
+/* =========================================================
+   12. APPLE TOAST NOTIFICATION
+   ========================================================= */
+#apple-toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.apple-toast { width: 320px; border-radius: 18px; padding: 14px 16px; display: flex; gap: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); background: transparent !important; border: none !important; pointer-events: auto !important; position: relative !important; z-index: 1 !important; right: -400px; transform: none !important; animation: toastMasuk 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important; }
+.apple-toast.hide { animation: toastKeluar 0.4s ease forwards !important; }
+.toast-icon { position: relative; z-index: 5; width: 38px; height: 38px; border-radius: 10px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; box-shadow: inset 0 2px 4px rgba(255,255,255,0.3); }
+.toast-content { position: relative; z-index: 5; display: flex; flex-direction: column; justify-content: center; }
+.toast-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+.toast-message { font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.3; }
 
-        /* BUTTONS */
-        .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px; border: 1px solid #d1d5db; background: var(--bg-panel); color: var(--text); }
-        .btn:hover { background: var(--bg); }
-        .btn-primary { background: var(--primary); color: white; border: none; }
-        
-        .search-box { 
-            padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; 
-            width: 250px; font-size: 13px; outline: none; background: var(--bg-panel); color: var(--text);
-        }
-        .search-box:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,120,212,0.1); }
+/* =========================================================
+   13. MASTER LIQUID LENS INJECTION (KHUSUS MENU & MODAL)
+   ========================================================= */
+.dropdown [class*="fpglass-"], .submenu [class*="fpglass-"], #context-menu [class*="fpglass-"], .apple-modal-box [class*="fpglass-"], .apple-toast [class*="fpglass-"] { z-index: -1 !important; pointer-events: none !important; border-radius: inherit !important; }
+.dropdown .fpglass-filter, .submenu .fpglass-filter, #context-menu .fpglass-filter, .apple-modal-box .fpglass-filter, .apple-toast .fpglass-filter { backdrop-filter: blur(6px) !important; -webkit-backdrop-filter: blur(6px) !important; filter: url(#lensFilter) saturate(140%) brightness(1.1) !important; }
+.dropdown .fpglass-overlay, .submenu .fpglass-overlay, #context-menu .fpglass-overlay, .apple-toast .fpglass-overlay { background: rgba(20, 20, 25, 0.6) !important; }
+.apple-modal-box .fpglass-overlay { background: rgba(15, 15, 20, 0.75) !important; }
+.dropdown .fpglass-specular, .submenu .fpglass-specular, #context-menu .fpglass-specular, .apple-modal-box .fpglass-specular, .apple-toast .fpglass-specular { box-shadow: inset 1.5px 1.5px 0 rgba(255,255,255,0.3), inset 0 0 12px rgba(255,255,255,0.05) !important; }
+.dropdown [class*="fpglass-"], .submenu [class*="fpglass-"], #context-menu [class*="fpglass-"], .apple-toast [class*="fpglass-"] { clip-path: inset(0 round 18px) !important; }
+.apple-modal-box [class*="fpglass-"] { clip-path: inset(0 round 2rem) !important; }
 
-        .pagination { padding: 10px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-panel); font-size: 13px; color: #6b7280; }
-
-        #loading { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 200; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; font-weight: 500; color: #333; }
-        [data-theme="dark"] #loading { background: rgba(0,0,0,0.8); color: #fff; }
-        
-        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 45; }
-
-        /* --- RESPONSIVE MOBILE (Max 900px) --- */
-        @media (max-width: 900px) {
-            /* 1. SIDEBAR (Off-Canvas) */
-            .sidebar {
-                position: fixed; top: 0; bottom: 0; left: 0;
-                transform: translateX(-100%);
-                box-shadow: 2px 0 10px rgba(0,0,0,0.2);
-            }
-            .sidebar.active { transform: translateX(0); }
-            
-            /* 2. UI Logic */
-            .menu-btn { display: block; }
-            .close-sidebar-btn { display: block; }
-            #overlay.active { display: block; }
-            .search-box { width: 140px; }
-            .toolbar { padding: 10px; }
-
-            /* 3. TABEL HP (NO SCROLL, FIT SCREEN) */
-            /* Kita atur ulang lebar kolom agar muat di layar kecil */
-            .col-guid { width: 20%; }   /* ID Sempit */
-            .col-source { width: 40%; } /* Sumber Sedang */
-            .col-target { width: 40%; } /* Target Sedang */
-            
-            /* Kecilkan padding/font sedikit di HP jika perlu */
-            thead th { padding: 8px; font-size: 12px; }
-            .cell-guid, .cell-source, textarea.edit-box { padding: 8px; font-size: 12px; }
-        }
+/* =========================================================
+   14. MISCELLANEOUS (LOADING & RESPONSIVE)
+   ========================================================= */
+#loading { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 15px; z-index: 5000; font-weight: 500; font-size: 14px; color: #fff; letter-spacing: 1px; }
+@media (max-width: 900px) { #empty-state { flex-direction: column; padding: 20px; gap: 15px; } .big-drop-zone { width: 100%; height: 200px; } .col-guid { width: 30%; } .col-source { width: 35%; } .col-target { width: 35%; } .floating-pagination { width: 90%; justify-content: space-between; } .top-status { display: none; } }
+@media (max-width: 600px) { .col-source { width: 50%; } .col-target { width: 50%; } thead th { font-size: 11px; padding: 10px 8px; } .cell-guid { font-size: 10px; padding: 10px 8px; } .cell-source, textarea.edit-box { font-size: 12px; padding: 10px 8px; } }
+		
     </style>
 </head>
 <body>
 
+<div class="bg-anim">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+</div>
+
 <div id="loading">
-    <div style="width: 40px; height: 40px; border: 4px solid #ccc; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
-    <div>Memproses Data...</div>
+    <div style="width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <div>Memproses...</div>
 </div>
 <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
 
-<div id="overlay" onclick="toggleMenu()"></div>
+<div id="context-menu">
+	<div class="fpglass-filter"></div>
+	<div class="fpglass-overlay"></div>
+	<div class="fpglass-specular"></div>
+    <div class="ctx-item" onclick="ctxAction('copy')">Salin Teks <span class="shortcut">Ctrl+C</span></div>
+    <div class="ctx-item" onclick="ctxAction('paste')">Tempel Teks <span class="shortcut">Ctrl+V</span></div>
+    <div class="ctx-divider"></div>
+    
+    <div class="ctx-item has-submenu">Salin Sumber...
+        <ul class="submenu" id="ctx-submenu-flip">
+			<div class="fpglass-filter"></div>
+			<div class="fpglass-overlay"></div>
+			<div class="fpglass-specular"></div>
+            <li class="ctx-item" style="padding: 6px 12px; margin:0;" onclick="ctxAction('copyToTarget')">Ke Target</li>
+            <li class="ctx-item" style="padding: 6px 12px; margin:0;" onclick="ctxAction('copyToAll')">Ke SEMUA Bahasa</li>
+        </ul>
+    </div>
+    <div class="ctx-item" onclick="ctxAction('editGuid')">Edit GUID Baris Ini... <span class="shortcut"></span></div>
+    <div class="ctx-divider"></div>
+    
+    <div class="ctx-item" style="color: #ff453a;" onclick="ctxAction('clear')">Kosongkan Teks Target</div>
+    <div class="ctx-item" style="color: #ff453a; font-weight: 600;" onclick="ctxAction('removeRow')">Hapus Baris Ini</div>
+</div>
 
-<div class="container">
-    <div class="sidebar" id="sidebar">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h2 style="margin:0; font-size:18px;">S3SE Web</h2>
-            <button class="close-sidebar-btn" onclick="toggleMenu()">&times;</button>
-        </div>
-
-        <div class="card">
-            <h3>1. File Sumber (Source)</h3>
-            <div class="drop-box" id="dropSrc" onclick="document.getElementById('fileSrc').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'source')" title="Klik untuk upload">
-                Upload STBL Asli
+<div id="search-modal">
+    <div class="spstglass-container fpglass-container--rounded search-submenu" id="searchSubmenu">
+        <div class="fpglass-filter"></div>
+        <div class="fpglass-overlay"></div>
+        <div class="fpglass-specular"></div>
+        <div class="fpglass-content" style="flex-direction: column;">
+            <div class="search-mode-container">
+                <input type="radio" name="searchMode" id="modeHighlight" value="highlight" class="search-mode-input" checked onchange="toggleSearchModeUI()">
+                <label for="modeHighlight" class="search-mode-label">Sorot (Highlight)</label>
+                <input type="radio" name="searchMode" id="modeFilter" value="filter" class="search-mode-input" onchange="toggleSearchModeUI()">
+                <label for="modeFilter" class="search-mode-label">Saring (Filter)</label>
             </div>
-            <input type="file" id="fileSrc" hidden accept=".stbl" onchange="loadFile('source', this.files[0])">
-        </div>
-
-        <div class="card">
-            <h3>2. File Terjemahan (Target)</h3>
-            <div class="drop-box" id="dropTgt" onclick="document.getElementById('fileTgt').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'target')" title="Klik untuk upload">
-                Upload STBL Target
+            <div class="search-info-bar" id="searchControls">
+                <span id="searchMatchInfo" style="font-size:11px; color:var(--text); font-weight:600;">0 / 0 Ditemukan</span>
+                <div style="display:flex; gap:6px;" id="navButtonsContainer">
+                    <button class="btn-icon" id="btnPrevMatch" onclick="prevMatch()" disabled>❮</button>
+                    <button class="btn-icon" id="btnNextMatch" onclick="nextMatch()" disabled>❯</button>
+                </div>
             </div>
-            <input type="file" id="fileTgt" hidden accept=".stbl" onchange="loadFile('target', this.files[0])">
-        </div>
-
-        <div class="card" style="margin-top:auto">
-            <h3>Status</h3>
-            <div id="infoText" style="font-size:12px; color:#6b7280;">Siap digunakan.</div>
         </div>
     </div>
 
-    <div class="main">
-        <div class="toolbar">
-            <button class="menu-btn" onclick="toggleMenu()">☰</button>
-            <button class="btn btn-primary" onclick="saveTargetFile()">💾 Simpan .STBL</button>
-            <div style="flex:1"></div>
-            <input type="text" class="search-box" id="searchInput" placeholder="Cari teks (Ctrl+F)..." onkeyup="handleSearch()">
-            <button class="theme-btn" onclick="toggleTheme()" title="Mode Gelap/Terang">🌙</button>
+    <div class="sptxtglass-container fpglass-container--rounded search-dialog" id="searchDialogBox">
+        <div class="fpglass-filter"></div>
+        <div class="fpglass-overlay"></div>
+        <div class="fpglass-specular"></div>
+        <div class="fpglass-content" style="flex-wrap: nowrap;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="var(--text-main)" viewBox="0 0 512 512" style="flex-shrink:0;"><path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+            <input type="text" id="modalSearchInput" class="search-input" placeholder="Cari teks atau ID..." onkeyup="executeSearch()">
+            <button class="search-action-btn close" onclick="closeSearch()" title="Tutup">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
         </div>
+    </div>
+</div>
+
+<input type="file" id="input-pkg-open" hidden accept=".package" onchange="loadPackage(this.files[0], false)">
+<input type="file" id="input-stbl-open" hidden accept=".stbl" multiple onchange="handleStblInput(this.files, false)">
+
+<input type="file" id="input-pkg-import" hidden accept=".package" onchange="loadPackage(this.files[0], true)">
+<input type="file" id="input-stbl-import" hidden accept=".stbl" multiple onchange="handleStblInput(this.files, true)">
+
+<input type="file" id="input-stbl-add" hidden accept=".stbl" multiple onchange="addMoreStblFiles(this.files)">
+
+<div id="stbl-mapping-modal">
+    <div class="sptxtglass-container fpglass-container--rounded stbl-popup-dialog">
+        <div class="fpglass-filter"></div>
+        <div class="fpglass-overlay"></div>
+        <div class="fpglass-specular"></div>
+        <div class="fpglass-content" style="flex-direction: column; padding: 25px; gap: 15px; width: 100%; align-items: stretch;">
+            
+            <h3 style="text-align:center; margin:0; font-size: 16px;">Pengaturan File STBL</h3>
+            <div style="font-size: 12px; color: var(--text-muted); text-align:center; margin-bottom: 5px;">Pilih mana file Sumber dan Target terjemahanmu.</div>
+
+            <div style="display:flex; flex-direction:column; gap:5px;">
+                <label style="font-size:11px; color:var(--text-muted); font-weight: 600;">File Sumber (Referensi):</label>
+                <select id="sel-source-file" class="stbl-select" onchange="checkStblMapping()"></select>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:5px;">
+                <label style="font-size:11px; color:var(--text-muted); font-weight: 600;">File Target (Terjemahan):</label>
+                <select id="sel-target-file" class="stbl-select" onchange="checkStblMapping()"></select>
+            </div>
+
+            <button class="btn" style="background: transparent; border: 1px dashed var(--glass-border); color: var(--primary); font-size: 11px; padding: 6px; margin-top: 5px;" onclick="document.getElementById('input-stbl-add').click()">+ Tambah File STBL Lainnya...</button>
+
+            <div id="stbl-warning" style="font-size: 11px; color: var(--fp-red); text-align: center; font-weight: 600; min-height: 15px;"></div>
+
+            <div style="display:flex; justify-content: space-between; gap: 10px; margin-top: 5px;">
+                <button class="btn" style="flex:1;" onclick="closeStblMapping()">Batal</button>
+                <button class="btn btn-primary" style="flex:1;" id="btn-stbl-ok" onclick="processStblMapping()" disabled>Mulai Edit</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div id="guid-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 4000; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
+    <div class="sptxtglass-container fpglass-container--rounded stbl-popup-dialog">
+        <div class="fpglass-filter" style="backdrop-filter: blur(20px); filter: saturate(180%) brightness(0.8);"></div>
+        <div class="fpglass-overlay"></div>
+        <div class="fpglass-specular"></div>
+        <div class="fpglass-content" style="flex-direction: column; padding: 25px; gap: 15px; width: 100%; align-items: stretch;">
+            
+            <h3 id="guid-modal-title" style="text-align:center; margin:0; font-size: 16px;">Tambah String (GUID)</h3>
+            <div style="font-size: 12px; color: var(--text-muted); text-align:center; margin-bottom: 5px;">Masukkan teks untuk di-hash (FNV64) atau ketik GUID manual.</div>
+
+            <div style="display:flex; flex-direction:column; gap:5px;">
+                <label style="font-size:11px; color:var(--text-muted); font-weight: 600;">Teks untuk di-Hash:</label>
+                <input type="text" id="guid-text-input" class="search-input" style="border-radius: 8px; padding: 8px 12px;" placeholder="Contoh: my_custom_interaction_name">
+            </div>
+
+            <div style="display:flex; justify-content: center;">
+                <button class="btn" style="font-size: 11px; padding: 4px 12px; background: rgba(255,255,255,0.1);" onclick="generateFNV64()">↓ Generate Hash ↓</button>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:5px;">
+                <label style="font-size:11px; color:var(--text-muted); font-weight: 600;">Instance GUID (Hex):</label>
+                <input type="text" id="guid-hex-input" class="search-input" style="border-radius: 8px; padding: 8px 12px; font-family: var(--mono); color: var(--primary);" placeholder="0x0000000000000000">
+            </div>
+
+            <div style="display:flex; justify-content: space-between; gap: 10px; margin-top: 10px;">
+                <button class="btn" style="flex:1;" onclick="closeGuidModal()">Batal</button>
+                <button class="btn btn-primary" style="flex:1;" id="btn-guid-ok" onclick="saveGuid()">Simpan</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div id="apple-toast-container"></div>
+
+<div id="apple-modal-overlay">
+    <div class="apple-modal-box">
+		<div class="fpglass-filter"></div>
+        <div class="fpglass-overlay"></div>
+        <div class="fpglass-specular"></div>
+        <div class="apple-modal-icon" id="apple-modal-icon">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Finder_Icon_macOS_Big_Sur.png" alt="Icon">
+        </div>
+        <div class="apple-modal-title" id="apple-modal-title">Judul</div>
+        <div class="apple-modal-text" id="apple-modal-text">Pesan teks ada di sini...</div>
+        <div class="apple-modal-buttons" id="apple-modal-buttons">
+            </div>
+    </div>
+</div>
+
+<div class="app-container">
+    <header class="top-bar">
+        <div class="logo">S3SE Web</div>
+        <ul class="nav-menu">
+            <li class="nav-item disabled" id="menu-file">File
+                <ul class="dropdown">
+					<div class="fpglass-filter"></div>
+					<div class="fpglass-overlay"></div>
+					<div class="fpglass-specular"></div>
+                    <li class="has-submenu">Buka Baru...
+                        <ul class="submenu">
+							<div class="fpglass-filter"></div>
+							<div class="fpglass-overlay"></div>
+							<div class="fpglass-specular"></div>
+                            <li onclick="document.getElementById('input-stbl-open').click()">File STBL</li>
+                            <li onclick="document.getElementById('input-pkg-open').click()">Package (.package)</li>
+                        </ul>
+                    </li>
+                    <li class="has-submenu">Import (Gabungkan)...
+                        <ul class="submenu">
+							<div class="fpglass-filter"></div>
+							<div class="fpglass-overlay"></div>
+							<div class="fpglass-specular"></div>
+                            <li onclick="document.getElementById('input-stbl-import').click()">File STBL</li>
+                            <li onclick="document.getElementById('input-pkg-import').click()">Package (.package)</li>
+                        </ul>
+                    </li>
+                    <div class="ctx-divider"></div>
+                    <li class="has-submenu">Export Proyek...
+                        <ul class="submenu">
+							<div class="fpglass-filter"></div>
+							<div class="fpglass-overlay"></div>
+							<div class="fpglass-specular"></div>
+                            <li onclick="saveTargetFile()">Sebagai .STBL</li>
+                            <li onclick="savePackageFile()">Sebagai .Package <span class="shortcut">Ctrl+S</span></li>
+                        </ul>
+                    </li>
+                    
+                    <div class="ctx-divider"></div>
+                    <li style="color: #ff453a;" onclick="closeProject()">Tutup Proyek...</li>
+                </ul>
+            </li>
+            
+            <li class="nav-item disabled" id="menu-edit">Edit
+                <ul class="dropdown">
+					<div class="fpglass-filter"></div>
+					<div class="fpglass-overlay"></div>
+					<div class="fpglass-specular"></div>
+                    <li onclick="openSearch()">Cari Teks... <span class="shortcut">Ctrl+F</span></li>
+                    <div class="ctx-divider"></div>
+                    <li onclick="openGuidModal(0)">Tambah String (GUID) Baru... <span class="shortcut"></span></li>
+                    <div class="ctx-divider"></div>
+                    <li class="has-submenu">Salin Massal...
+                        <ul class="submenu">
+							<div class="fpglass-filter"></div>
+					        <div class="fpglass-overlay"></div>
+							<div class="fpglass-specular"></div>
+                            <li onclick="copyAllToTarget()">SEMUA ke Target</li>
+                            <li onclick="copyAllToAll()">SEMUA ke 23 Bahasa</li>
+                        </ul>
+                    </li>
+
+                    <div id="dynamic-edit-context" style="display: none;">
+                        <div class="ctx-divider"></div>
+                        <div style="padding: 4px 12px; font-size: 10px; color: var(--text-dim); font-weight: 700; letter-spacing: 0.5px;">AKSI BARIS TERPILIH</div>
+                        <li onclick="ctxAction('copy')">Salin Teks <span class="shortcut">Ctrl+C</span></li>
+                        <li onclick="ctxAction('paste')">Tempel Teks <span class="shortcut">Ctrl+V</span></li>
+                        <li class="has-submenu">Salin Sumber...
+                            <ul class="submenu" id="dynamic-submenu-flip">
+								<div class="fpglass-filter"></div>
+								<div class="fpglass-overlay"></div>
+								<div class="fpglass-specular"></div>
+                                <li onclick="ctxAction('copyToTarget')">Ke Target <span class="shortcut"></span></li>
+                                <li onclick="ctxAction('copyToAll')">Ke SEMUA Bahasa <span class="shortcut"></span></li>
+                            </ul>
+                        </li>
+                        <li onclick="ctxAction('editGuid')">Edit GUID Baris Ini... <span class="shortcut"></span></li>
+                        <div class="ctx-divider"></div>
+                        <li style="color: #ff453a;" onclick="ctxAction('clear')">Kosongkan Teks Target</li>
+                        <li style="color: #ff453a; font-weight: 600;" onclick="ctxAction('removeRow')">Hapus Baris Ini</li>
+                    </div>
+                </ul>
+            </li>
+
+            <li class="nav-item disabled" id="menu-stbls">STBLs
+                <ul class="dropdown">
+					<div class="fpglass-filter"></div>
+					<div class="fpglass-overlay"></div>
+					<div class="fpglass-specular"></div>
+                    <li onclick="createNewSet()">Buat Set Baru... <span class="shortcut"></span></li>
+                    <li onclick="mergeAllSets()">Merge Semua Set <span class="shortcut"></span></li>
+                    <div class="ctx-divider"></div>
+                    <li style="color: #ff453a;" onclick="deleteCurrentSet()">Hapus Set Ini</li>
+                </ul>
+            </li>
+        </ul>
         
-        <div class="grid-wrapper" id="gridContainer">
+        <div style="display:flex; gap: 8px; margin-left: auto; align-items: center;" id="top-controls" class="disabled">
+            <select id="set-picker" class="stbl-select" style="width: 140px; padding: 4px 28px 4px 10px; background: rgba(255,255,255,0.1); border-color: transparent;" onchange="changeStringSet()">
+                <option value="">Set: Default</option>
+            </select>
+            <select id="lang-source" class="stbl-select" style="width: 110px; padding: 4px 28px 4px 10px; background: rgba(255,255,255,0.1); border-color: transparent;" onchange="changeLanguage()">
+                <option value="en-us">Src: English</option>
+            </select>
+            <select id="lang-target" class="stbl-select" style="width: 110px; padding: 4px 28px 4px 10px; background: rgba(10,132,255,0.2); border-color: var(--primary); color: #fff;" onchange="changeLanguage()">
+                <option value="id-id">Tgt: Indonesia</option>
+            </select>
+        </div>
+
+        <div class="top-status-wrapper">
+            <span class="top-status-text" id="topStatusText">Menunggu File</span>
+        </div>
+    </header>
+
+    <div id="empty-state">
+        <h1 style="font-weight: 800; font-size: 24px; margin-bottom: 5px;">Mulai Translasi</h1>
+        <p style="color: var(--text-muted); font-size: 14px;">Pilih cara Anda ingin memulai proyek ini</p>
+        
+        <div class="welcome-grid">
+            <div class="welcome-card" onclick="document.getElementById('input-pkg-open').click()">
+                <i>📦</i>
+                <h3>Buka Package</h3>
+                <p>Bongkar file .package dan otomatis edit teks di dalamnya.</p>
+            </div>
+            
+            <div class="welcome-card" onclick="document.getElementById('input-stbl-open').click()">
+                <i>📝</i>
+                <h3>Buka STBL</h3>
+                <p>Edit file .stbl mentah atau bandingkan dua bahasa.</p>
+            </div>
+            
+            <div class="welcome-card" onclick="startNewProject()">
+                <i>✨</i>
+                <h3>Buat Baru</h3>
+                <p>Mulai dengan tabel kosong dan buat teks/ID dari nol.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="editor-view">
+        <div class="table-container" id="gridContainer">
             <table id="grid">
                 <thead>
                     <tr>
@@ -247,59 +537,340 @@
             </table>
         </div>
 
-        <div class="pagination">
-            <button class="btn" onclick="changePage(-1)" id="btnPrev">❮ Sebelumnya</button>
-            <span id="pageInfo">Halaman 1</span>
-            <button class="btn" onclick="changePage(1)" id="btnNext">Berikutnya ❯</button>
-        </div>
+        <div class="floating-pagination">
+			<div class="fpglass-container fpglass-container--rounded fpglass-container--medium">
+			<div class="fpglass-filter"></div>
+			<div class="fpglass-overlay"></div>
+			<div class="fpglass-specular"></div>
+			<div class="fpglass-content">
+				<button class="fpglass-item" onclick="changePage(-1)" id="btnPrev">
+					<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="13" height="13" viewBox="0 0 298 511.93"><path d="M285.77 441c16.24 16.17 16.32 42.46.15 58.7-16.16 16.24-42.45 16.32-58.69.16l-215-214.47c-16.24-16.16-16.32-42.45-.15-58.69L227.23 12.08c16.24-16.17 42.53-16.09 58.69.15 16.17 16.24 16.09 42.54-.15 58.7l-185.5 185.04L285.77 441z"/></svg>
+				</button>
+				<span class="bubble-text" id="pageInfo">Halaman 1 / 1</span>
+				<button class="fpglass-item" onclick="changePage(1)" id="btnNext">
+					<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="13" height="13" viewBox="0 0 298 511.93"><path d="M70.77 499.85c-16.24 16.17-42.53 16.09-58.69-.15-16.17-16.25-16.09-42.54.15-58.7l185.5-185.03L12.23 70.93c-16.24-16.16-16.32-42.45-.15-58.7 16.16-16.24 42.45-16.32 58.69-.15l215.15 214.61c16.17 16.25 16.09 42.54-.15 58.7l-215 214.46z"/></svg>
+				</button>
+			</div>
+		</div>
     </div>
 </div>
 
 <script>
-    // --- TEMA & UI ---
-    if(localStorage.getItem('theme') === 'dark') {
-        document.body.setAttribute('data-theme', 'dark');
-        document.querySelector('.theme-btn').innerText = '☀️';
-    }
 
-    function toggleTheme() {
-        const b = document.body;
-        const btn = document.querySelector('.theme-btn');
-        if (b.getAttribute('data-theme') === 'dark') {
-            b.removeAttribute('data-theme');
-            btn.innerText = '🌙';
-            localStorage.setItem('theme', 'light');
-        } else {
-            b.setAttribute('data-theme', 'dark');
-            btn.innerText = '☀️';
-            localStorage.setItem('theme', 'dark');
-        }
-    }
-
-    function toggleMenu() {
-        if (window.innerWidth <= 900) {
-            document.getElementById('sidebar').classList.toggle('active');
-            document.getElementById('overlay').classList.toggle('active');
-        }
-    }
-
-    // --- LOGIC V1.2 ---
+    // --- STATE MANAGEMENT ---
+	let projectSets = {}; // Format: { "0x1234567890ABCD": [ array data ], ... }
+	let currentSetId = "";
+	
     let allData = [];      
     let filteredData = []; 
     let currentPage = 1;
     const ITEMS_PER_PAGE = 50; 
+    
+    // Header S3PI
+    let stblHeader = { u1: 0, u2: 0, u3: 0 };
 
-    function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
-    function handleDragOver(e) { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add('dragover'); }
-    function handleDrop(e, type) {
-        e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('dragover');
-        if(e.dataTransfer.files.length > 0) loadFile(type, e.dataTransfer.files[0]);
+    // Mode Pencarian
+    let isFilterMode = false;
+    let searchMatches = [];
+    let currentMatchIdx = -1;
+	
+	// --- APPLE UI ENGINE ---
+    
+    // 1. Fungsi Memanggil Notifikasi Toast (Kanan Atas)
+    function showNotification(title, message, type = 'info') {
+        const container = document.getElementById('apple-toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'apple-toast';
+        
+        let icon = 'ℹ️'; let bg = 'var(--primary)';
+        if(type === 'success') { icon = '✓'; bg = '#34c759'; } // Hijau khas Apple
+        if(type === 'warning') { icon = '⚠️'; bg = '#ff9f0a'; } // Oranye khas Apple
+        if(type === 'error') { icon = '✕'; bg = '#ff453a'; } // Merah khas Apple
+        
+        // KESALAHAN ADA DI SINI SEBELUMNYA (Tanda kutip miring penutupnya hilang)
+        toast.innerHTML = `
+            <div class="fpglass-filter"></div>
+            <div class="fpglass-overlay"></div>
+            <div class="fpglass-specular"></div>
+            <div class="toast-icon" style="background: ${bg}">${icon}</div>
+            <div class="toast-content">
+                <div class="toast-title">${title}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+        `; // <--- INI DIA PENYELAMATNYA!
+        
+        container.appendChild(toast);
+        
+        // Hilangkan otomatis setelah 4 detik
+        setTimeout(() => {
+            toast.classList.add('hide');
+            setTimeout(() => toast.remove(), 400);
+        }, 4000);
     }
 
-    function parseSTBL(buffer) {
+    // 2. Fungsi Memanggil Alert & Confirm Tengah Layar (Pengganti window.confirm)
+    function appleConfirm(title, message, confirmText = "OK", cancelText = "Batal", isDanger = false) {
+        return new Promise((resolve) => {
+            const overlay = document.getElementById('apple-modal-overlay');
+            document.getElementById('apple-modal-title').innerText = title;
+            document.getElementById('apple-modal-text').innerText = message;
+            
+            // Generate Ikon SVG Murni (Anti-Broken)
+            const iconDiv = document.getElementById('apple-modal-icon');
+            if (isDanger) {
+                // Ikon Peringatan Kuning Khas Mac
+                iconDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ff9f0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:52px;height:52px;margin-bottom:12px;filter:drop-shadow(0 4px 6px rgba(0,0,0,0.2));"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+            } else {
+                // Ikon Info Biru
+                iconDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:52px;height:52px;margin-bottom:12px;filter:drop-shadow(0 4px 6px rgba(0,0,0,0.2));"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+            }
+
+            const btnContainer = document.getElementById('apple-modal-buttons');
+            btnContainer.innerHTML = ''; 
+            
+            const btnConfirm = document.createElement('button');
+            btnConfirm.className = `apple-btn ${isDanger ? 'apple-btn-danger' : 'apple-btn-primary'}`;
+            btnConfirm.innerText = confirmText;
+            btnConfirm.onclick = () => { closeAppleModal(); resolve(true); };
+
+            if (cancelText) {
+                const btnCancel = document.createElement('button');
+                btnCancel.className = 'apple-btn apple-btn-secondary';
+                btnCancel.innerText = cancelText;
+                btnCancel.onclick = () => { closeAppleModal(); resolve(false); };
+                btnContainer.appendChild(btnCancel); 
+            }
+            
+            btnContainer.insertBefore(btnConfirm, btnContainer.firstChild); 
+            
+            overlay.style.display = 'flex';
+            void overlay.offsetWidth;
+            overlay.classList.add('active');
+        });
+    }
+
+    function appleAlert(title, message) { return appleConfirm(title, message, "OK", null, false); }
+
+    function closeAppleModal() {
+        const overlay = document.getElementById('apple-modal-overlay');
+        overlay.classList.remove('active');
+        setTimeout(() => { overlay.style.display = 'none'; }, 200);
+    }
+	
+	// --- LOGIKA SET CONTROLLER ---
+    function updateSetPicker() {
+        const picker = document.getElementById('set-picker');
+        picker.innerHTML = '';
+        const setIds = Object.keys(projectSets);
+        
+        if(setIds.length === 0) {
+            picker.innerHTML = '<option value="">Set: Kosong</option>';
+            currentSetId = "";
+            allData = [];
+        } else {
+            setIds.forEach((id, idx) => {
+                picker.innerHTML += `<option value="${id}">Set ${idx + 1} (${id})</option>`;
+            });
+            if(!projectSets[currentSetId]) currentSetId = setIds[0]; // Auto-pilih set pertama jika aktif hilang
+            picker.value = currentSetId;
+            allData = projectSets[currentSetId];
+        }
+        
+        isFilterMode = false; filteredData = allData; currentPage = 1;
+        renderPage();
+        if(allData) document.getElementById('topStatusText').innerText = `Set Aktif: ${allData.length} Baris`;
+    }
+	
+	function changeStringSet() {
+        currentSetId = document.getElementById('set-picker').value;
+        allData = projectSets[currentSetId];
+        isFilterMode = false; filteredData = allData; currentPage = 1;
+        renderPage();
+        document.getElementById('topStatusText').innerText = `Set Aktif: ${allData.length} Baris`;
+    }
+	
+	function createNewSet() {
+        // Buat ID Set baru (14 karakter Hex)
+        const randomHex = Math.floor(Math.random() * 0xFFFFFFFFFFFFFF).toString(16).padStart(14, '0').toUpperCase();
+        const newSetId = "0x" + randomHex;
+        
+        projectSets[newSetId] = [];
+        currentSetId = newSetId;
+        updateSetPicker();
+    }
+	
+	function deleteCurrentSet() {
+        if(!currentSetId || !projectSets[currentSetId]) return;
+        appleConfirm("Hapus Set", `Yakin ingin menghapus Set ${currentSetId} beserta seluruh bahasanya?`, "Hapus Permanen", "Batal", true)
+        .then(res => {
+            if(res) {
+                delete projectSets[currentSetId];
+                updateSetPicker();
+                showNotification("Berhasil", "Set berhasil dihapus dari proyek.", "success");
+            }
+        });
+    }
+	
+	function mergeAllSets() {
+        const setIds = Object.keys(projectSets);
+        if(setIds.length <= 1) return appleAlert("Tidak Dapat Merge", "Hanya ada 1 Set yang aktif. Tidak ada yang perlu di-merge.");
+        
+        appleConfirm("Merge Semua Set", "Ini akan melebur semua Set menjadi 1 Set utama secara permanen. Lanjutkan?", "Merge", "Batal")
+        .then(res => {
+            if(res) {
+                const masterSetId = setIds[0];
+                const masterData = projectSets[masterSetId];
+                
+                for(let i = 1; i < setIds.length; i++) {
+                    const childData = projectSets[setIds[i]];
+                    childData.forEach(childRow => {
+                        let exist = masterData.find(r => r.keyBig === childRow.keyBig);
+                        if(exist) {
+                            for(let lang in childRow.strings) {
+                                if(childRow.strings[lang]) exist.strings[lang] = childRow.strings[lang];
+                            }
+                        } else {
+                            masterData.push(childRow);
+                        }
+                    });
+                    delete projectSets[setIds[i]];
+                }
+                currentSetId = masterSetId;
+                updateSetPicker();
+                showNotification("Selesai", "Semua Set berhasil dilebur menjadi satu.", "success");
+            }
+        });
+    }
+
+    function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
+    function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); }
+    function handleDrop(e, type) { e.preventDefault(); e.currentTarget.classList.remove('dragover'); if(e.dataTransfer.files.length > 0) loadFile(type, e.dataTransfer.files[0]); }
+
+    // Shortcut Keyboard
+    document.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') { e.preventDefault(); openSearch(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveTargetFile(); }
+    });
+
+    // --- LOGIKA PENCARIAN (MODAL) ---
+    function toggleSearchModeUI() {
+        const mode = document.querySelector('input[name="searchMode"]:checked').value;
+        const navContainer = document.getElementById('navButtonsContainer');
+        if (mode === 'filter') {
+            navContainer.style.display = 'none'; 
+            document.getElementById('searchMatchInfo').innerText = "Tabel akan disaring";
+        } else {
+            navContainer.style.display = 'flex'; 
+            document.getElementById('searchMatchInfo').innerText = "0 / 0 Ditemukan";
+        }
+    }
+
+    function openSearch() {
+        document.querySelector('.floating-pagination').classList.add('hidden-by-search');
+        
+        const searchModal = document.getElementById('search-modal');
+        
+        // Cukup tambahkan class 'active', CSS akan mengurus animasinya
+        searchModal.classList.add('active');
+        
+        setTimeout(() => { document.getElementById('modalSearchInput').focus(); }, 150);
+        toggleSearchModeUI();
+    }
+
+    function closeSearch() {
+        const searchModal = document.getElementById('search-modal');
+        
+        // Cabut class 'active' agar kapsul tenggelam dan hilang pelan-pelan
+        searchModal.classList.remove('active');
+        
+        // Tunggu animasi tenggelam (400ms) sebelum memunculkan pagination lagi
+        setTimeout(() => {
+            document.querySelector('.floating-pagination').classList.remove('hidden-by-search');
+        }, 400);
+
+        if (!isFilterMode) {
+            document.querySelectorAll('#tbody tr').forEach(tr => tr.classList.remove('highlight-row'));
+        }
+    }
+
+    function executeSearch() {
+        const term = document.getElementById('modalSearchInput').value.toLowerCase();
+        const mode = document.querySelector('input[name="searchMode"]:checked').value;
+        
+        searchMatches = []; currentMatchIdx = -1;
+        
+        if(!term) {
+            isFilterMode = false; filteredData = allData; currentPage = 1; renderPage();
+            document.getElementById('searchMatchInfo').innerText = "0 / 0 Ditemukan";
+            document.getElementById('btnPrevMatch').disabled = true; document.getElementById('btnNextMatch').disabled = true;
+            return;
+        }
+
+        if (mode === 'filter') {
+            isFilterMode = true;
+            filteredData = allData.filter(item => 
+                (item.sourceStr && item.sourceStr.toLowerCase().includes(term)) ||
+                (item.targetStr && item.targetStr.toLowerCase().includes(term)) ||
+                (item.keyHex.toLowerCase().includes(term))
+            );
+            currentPage = 1; renderPage();
+            document.getElementById('searchMatchInfo').innerText = `${filteredData.length} Disaring`;
+        } else {
+            isFilterMode = false; filteredData = allData; 
+            allData.forEach((item, index) => {
+                if ((item.sourceStr && item.sourceStr.toLowerCase().includes(term)) ||
+                    (item.targetStr && item.targetStr.toLowerCase().includes(term)) ||
+                    (item.keyHex.toLowerCase().includes(term))) {
+                    searchMatches.push(index);
+                }
+            });
+
+            if(searchMatches.length > 0) { currentMatchIdx = 0; goToMatch(); } 
+            else {
+                document.getElementById('searchMatchInfo').innerText = "0 / 0 Ditemukan";
+                document.getElementById('btnPrevMatch').disabled = true; document.getElementById('btnNextMatch').disabled = true;
+                alert("Teks tidak ditemukan.");
+            }
+        }
+    }
+
+    function nextMatch() { if(searchMatches.length > 0 && !isFilterMode) { currentMatchIdx = (currentMatchIdx + 1) % searchMatches.length; goToMatch(); } }
+    function prevMatch() { if(searchMatches.length > 0 && !isFilterMode) { currentMatchIdx = (currentMatchIdx - 1 + searchMatches.length) % searchMatches.length; goToMatch(); } }
+
+    function goToMatch() {
+        document.getElementById('searchMatchInfo').innerText = `${currentMatchIdx + 1} / ${searchMatches.length} Ditemukan`;
+        document.getElementById('btnPrevMatch').disabled = searchMatches.length <= 1;
+        document.getElementById('btnNextMatch').disabled = searchMatches.length <= 1;
+
+        const globalIdx = searchMatches[currentMatchIdx];
+        currentPage = Math.floor(globalIdx / ITEMS_PER_PAGE) + 1;
+        renderPage(); 
+        
+        setTimeout(() => {
+            const trs = document.querySelectorAll('#tbody tr');
+            const localIdx = globalIdx % ITEMS_PER_PAGE;
+            if(trs[localIdx]) {
+                trs.forEach(tr => tr.classList.remove('highlight-row'));
+                trs[localIdx].classList.add('highlight-row');
+                trs[localIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 50);
+    }
+
+
+    // --- PARSER STBL S3PI (LOGIKA ASLI) ---
+    function parseSTBL(buffer, isTarget) {
         const view = new DataView(buffer); const decoder = new TextDecoder("utf-16le");
         try { if (new TextDecoder().decode(buffer.slice(0, 4)) !== "STBL") throw new Error("Format Invalid"); } catch(e) { throw new Error("Bukan file STBL yang valid."); }
-        const count = view.getUint32(7, true); let offset = 17; let entries = [];
+        
+        let u1 = view.getUint16(5, true);
+        const count = view.getUint32(7, true); 
+        let u2 = view.getUint16(11, true);
+        let u3 = view.getUint32(13, true);
+
+        if (isTarget || (!isTarget && stblHeader.u1 === 0 && stblHeader.u2 === 0)) { stblHeader = { u1, u2, u3 }; }
+
+        let offset = 17; let entries = [];
         for(let i=0; i<count; i++) {
             if(offset >= buffer.byteLength) break;
             const keyBig = view.getBigUint64(offset, true); offset += 8;
@@ -311,32 +882,149 @@
         } return entries;
     }
 
-    async function loadFile(type, file) {
-        if(!file) return; showLoading(true);
-        setTimeout(async () => {
-            try {
-                const buf = await file.arrayBuffer(); const entries = parseSTBL(buf);
-                if (type === 'source') {
-                    if (allData.length === 0) allData = entries.map(e => ({ ...e, sourceStr: e.str, targetStr: "" }));
-                    else entries.forEach(src => {
-                        const exist = allData.find(r => r.keyBig === src.keyBig);
-                        if(exist) exist.sourceStr = src.str; else allData.push({ ...src, sourceStr: src.str, targetStr: "" });
-                    });
-                    const dz = document.getElementById('dropSrc'); dz.classList.add('filled'); dz.innerText = file.name; dz.title = file.name;
-                    if(window.innerWidth <= 900) toggleMenu();
-                } else {
-                    if (allData.length === 0) allData = entries.map(e => ({ ...e, sourceStr: "", targetStr: e.str }));
-                    else entries.forEach(tgt => {
-                        const exist = allData.find(r => r.keyBig === tgt.keyBig);
-                        if(exist) exist.targetStr = tgt.str; else allData.push({ ...tgt, sourceStr: "(Key hilang)", targetStr: tgt.str });
-                    });
-                    const dz = document.getElementById('dropTgt'); dz.classList.add('filled'); dz.innerText = file.name; dz.title = file.name;
-                    if(window.innerWidth <= 900) toggleMenu();
-                }
-                filteredData = allData; currentPage = 1; renderPage();
-                document.getElementById('infoText').innerText = `Total: ${allData.length.toLocaleString()} baris`;
-            } catch (err) { alert("Error: " + err.message); } finally { showLoading(false); }
-        }, 50);
+    // --- LOGIKA POPUP PENGATURAN STBL ---
+    let pendingStblFiles = [];
+	let isStblMergeMode = false;
+	
+	function refreshStblDropdowns() {
+        const selSrc = document.getElementById('sel-source-file');
+        const selTgt = document.getElementById('sel-target-file');
+
+        // Simpan pilihan sebelumnya (jika ada) agar tidak reset saat tambah file baru
+        const prevSrc = selSrc.value;
+        const prevTgt = selTgt.value;
+
+        selSrc.innerHTML = '<option value="">-- Pilih File --</option>';
+        selTgt.innerHTML = '<option value="">-- Pilih File --</option>';
+
+        pendingStblFiles.forEach((f, idx) => {
+            selSrc.innerHTML += `<option value="${idx}">${f.name}</option>`;
+            selTgt.innerHTML += `<option value="${idx}">${f.name}</option>`;
+        });
+
+        // Kembalikan pilihan user sebelumnya
+        if (prevSrc) selSrc.value = prevSrc;
+        if (prevTgt) selTgt.value = prevTgt;
+
+        // Otomatis pilihkan jika tepat ada 2 file dan belum dipilih
+        if (pendingStblFiles.length === 2 && !prevSrc && !prevTgt) {
+            selSrc.value = "0";
+            selTgt.value = "1";
+        } else if (pendingStblFiles.length === 1 && !prevSrc) {
+            selSrc.value = "0"; // Jika cuma 1, otomatis jadikan sumber
+        }
+
+        checkStblMapping();
+    }
+
+    function handleStblInput(files, isMerge) {
+        isStblMergeMode = isMerge; // Simpan mode yang dipilih user
+        pendingStblFiles = Array.from(files);
+        if(pendingStblFiles.length === 0) return;
+
+        const modal = document.getElementById('stbl-mapping-modal');
+        modal.style.display = 'flex';
+        void modal.offsetWidth; 
+        modal.classList.add('active');
+
+        refreshStblDropdowns();
+    }
+	
+	function addMoreStblFiles(files) {
+        const newFiles = Array.from(files);
+        pendingStblFiles = pendingStblFiles.concat(newFiles); // Gabungkan file lama dan baru
+        refreshStblDropdowns();
+        document.getElementById('input-stbl-add').value = ""; // Reset input
+    }
+
+    function checkStblMapping() {
+        const selSrc = document.getElementById('sel-source-file').value;
+        const selTgt = document.getElementById('sel-target-file').value;
+        const warn = document.getElementById('stbl-warning');
+        const btnOk = document.getElementById('btn-stbl-ok');
+
+        if (pendingStblFiles.length < 2) {
+            warn.innerText = "Peringatan: Kamu harus memasukkan minimal 2 file STBL!";
+            btnOk.disabled = true;
+        } else if (selSrc === "" || selTgt === "") {
+            warn.innerText = "Pilih file untuk Sumber dan Target!";
+            btnOk.disabled = true;
+        } else if (selSrc === selTgt) {
+            warn.innerText = "File Sumber dan Target tidak boleh sama!";
+            btnOk.disabled = true;
+        } else {
+            warn.innerText = "";
+            btnOk.disabled = false;
+        }
+    }
+
+    function closeStblMapping() {
+        const modal = document.getElementById('stbl-mapping-modal');
+        modal.classList.remove('active'); // Jalankan animasi Pop-Out
+        
+        setTimeout(() => {
+            modal.style.display = 'none';
+            document.getElementById('input-stbl-multi').value = ""; 
+            pendingStblFiles = [];
+        }, 300); // Tunggu animasi selesai
+    }
+
+    async function processStblMapping() {
+        if (!isStblMergeMode && Object.keys(projectSets).length > 0) {
+            // PAKAI APPLE CONFIRM
+            const res = await appleConfirm("Timpa Proyek?", "Membuka STBL baru akan MENGHAPUS SEMUA DATA di proyek saat ini. Yakin ingin melanjutkan?", "Hapus Data Lama", "Batal", true);
+            if(!res) return; // Jika batal, modal STBL tetap terbuka
+        }
+
+        showLoading(true);
+        closeStblMapping();
+
+        const srcIdx = parseInt(document.getElementById('sel-source-file').value);
+        const tgtIdx = parseInt(document.getElementById('sel-target-file').value);
+
+        const fileSrc = pendingStblFiles[srcIdx];
+        const fileTgt = pendingStblFiles[tgtIdx];
+
+        try {
+            const bufSrc = await fileSrc.arrayBuffer();
+            const entriesSrc = parseSTBL(bufSrc, false);
+            
+            const bufTgt = await fileTgt.arrayBuffer();
+            const entriesTgt = parseSTBL(bufTgt, true);
+
+            if (!isStblMergeMode) projectSets = {}; 
+
+            if (!currentSetId || !projectSets[currentSetId]) {
+                const randomHex = Math.floor(Math.random() * 0xFFFFFFFFFFFFFF).toString(16).padStart(14, '0').toUpperCase();
+                currentSetId = "0x" + randomHex;
+                projectSets[currentSetId] = [];
+            }
+
+            let currentSetData = projectSets[currentSetId];
+            const srcLang = document.getElementById('lang-source').value || "0";
+            const tgtLang = document.getElementById('lang-target').value || "0";
+
+            entriesSrc.forEach(src => {
+                let exist = currentSetData.find(r => r.keyBig === src.keyBig);
+                if (!exist) { exist = { keyBig: src.keyBig, keyHex: src.keyHex, strings: {} }; currentSetData.push(exist); }
+                if (!exist.strings) exist.strings = {};
+                exist.strings[srcLang] = src.str; 
+            });
+            
+            entriesTgt.forEach(tgt => {
+                let exist = currentSetData.find(r => r.keyBig === tgt.keyBig);
+                if (!exist) { exist = { keyBig: tgt.keyBig, keyHex: tgt.keyHex, strings: {} }; currentSetData.push(exist); }
+                if (!exist.strings) exist.strings = {};
+                exist.strings[tgtLang] = tgt.str; 
+            });
+
+            updateSetPicker();
+            if(document.getElementById('input-stbl-open')) document.getElementById('input-stbl-open').value = "";
+            if(document.getElementById('input-stbl-import')) document.getElementById('input-stbl-import').value = "";
+            
+            showNotification("Berhasil", "File STBL berhasil dimuat.", "success");
+            initWorkspace(); 
+        } catch (err) { appleAlert("Error", err.message); } finally { showLoading(false); }
     }
 
     function autoResize(el) {
@@ -344,20 +1032,49 @@
         if (el.scrollHeight < el.parentElement.clientHeight) el.style.height = '100%';
     }
 
+	// --- VARIABEL BAHASA AKTIF ---
+    let currentSrcLang = "0"; // Default: English
+    let currentTgtLang = "0";
+
+    function changeLanguage() {
+        currentSrcLang = document.getElementById('lang-source').value;
+        currentTgtLang = document.getElementById('lang-target').value;
+        renderPage(); // Refresh tabel saat bahasa diganti!
+    }
+
+    // --- RENDER TABEL (DIUPDATE UNTUK MULTI-LANGUAGE) ---
     function renderPage() {
-        const tbody = document.getElementById('tbody'); tbody.innerHTML = '';
+        if(allData.length === 0) {
+            document.getElementById('tbody').innerHTML = '';
+            return;
+        }
+        
+        const tbody = document.getElementById('tbody'); 
+        tbody.innerHTML = '';
+        
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         const pageData = filteredData.slice(start, start + ITEMS_PER_PAGE);
         const frag = document.createDocumentFragment();
 
-        pageData.forEach(row => {
+        pageData.forEach((row, idx) => {
             const tr = document.createElement('tr');
-            const val = row.targetStr !== undefined ? row.targetStr : row.sourceStr;
+            const globalIndex = start + idx;
+            if (!isFilterMode && searchMatches.length > 0 && searchMatches[currentMatchIdx] === globalIndex) { 
+                tr.classList.add('highlight-row'); 
+            }
+
+            // Pastikan objek strings ada
+            if (!row.strings) row.strings = {};
+
+            // Ambil teks berdasarkan bahasa yang dipilih di Top Bar
+            const valSrc = row.strings[currentSrcLang] !== undefined ? row.strings[currentSrcLang] : "(Kosong)";
+            const valTgt = row.strings[currentTgtLang] !== undefined ? row.strings[currentTgtLang] : "";
+
             tr.innerHTML = `
                 <td class="cell-guid">${row.keyHex}</td>
-                <td class="cell-source">${row.sourceStr || ""}</td>
+                <td class="cell-source">${valSrc}</td>
                 <td class="cell-target">
-                    <textarea class="edit-box" oninput="handleInput(this, '${row.keyHex}')">${val}</textarea>
+                    <textarea class="edit-box" data-key="${row.keyHex}" oninput="handleInput(this, '${row.keyHex}')" spellcheck="false">${valTgt}</textarea>
                 </td>
             `;
             frag.appendChild(tr);
@@ -368,59 +1085,785 @@
         updatePagination();
     }
 
+    // --- SIMPAN INPUT USER KE BAHASA YANG TEPAT ---
     window.handleInput = (el, keyHex) => {
         const item = allData.find(d => d.keyHex === keyHex);
-        if(item) item.targetStr = el.value;
+        if(item) {
+            if (!item.strings) item.strings = {};
+            item.strings[currentTgtLang] = el.value; // Simpan ke gudang bahasa Target saat ini
+        }
         autoResize(el);
     };
 
     function changePage(delta) {
         const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE) || 1;
         const newPage = currentPage + delta;
-        if(newPage > 0 && newPage <= totalPages) { currentPage = newPage; renderPage(); }
+        if(newPage > 0 && newPage <= totalPages) { 
+            currentPage = newPage; 
+            if (!isFilterMode) { searchMatches = []; currentMatchIdx = -1; }
+            renderPage(); 
+        }
     }
 
     function updatePagination() {
-        const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE) || 1;
-        document.getElementById('pageInfo').innerText = `Halaman ${currentPage} / ${totalPages}`;
-        document.getElementById('btnPrev').disabled = currentPage <= 1;
-        document.getElementById('btnNext').disabled = currentPage >= totalPages;
+    const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE) || 1;
+    document.getElementById('pageInfo').innerText = `Halaman ${currentPage} / ${totalPages}`;
+    
+    // Disable/Enable Tombol Prev
+    const prevItem = document.getElementById('btnPrev').closest('.fpglass-item');
+    if(currentPage <= 1) {
+        prevItem.classList.add('disabled');
+        document.getElementById('btnPrev').disabled = true;
+    } else {
+        prevItem.classList.remove('disabled');
+        document.getElementById('btnPrev').disabled = false;
     }
 
-    let searchTimer;
-    function handleSearch() {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => {
-            const term = document.getElementById('searchInput').value.toLowerCase();
-            filteredData = !term ? allData : allData.filter(i => 
-                (i.sourceStr && i.sourceStr.toLowerCase().includes(term)) ||
-                (i.targetStr && i.targetStr.toLowerCase().includes(term)) ||
-                (i.keyHex.toLowerCase().includes(term))
-            );
-            currentPage = 1; renderPage();
+    // Disable/Enable Tombol Next
+    const nextItem = document.getElementById('btnNext').closest('.fpglass-item');
+    if(currentPage >= totalPages) {
+        nextItem.classList.add('disabled');
+        document.getElementById('btnNext').disabled = true;
+    } else {
+        nextItem.classList.remove('disabled');
+        document.getElementById('btnNext').disabled = false;
+    }
+}
+
+    // --- SIMPAN FILE STBL (MULTI-LANG SUPPORT) ---
+    function saveTargetFile() {
+        if(allData.length === 0) return alert("File kosong! Buka file terlebih dahulu melalui Menu File."); 
+        showLoading(true);
+        
+        setTimeout(() => {
+            const targetLang = document.getElementById('lang-target').value || "0";
+            let strBytes = 0; 
+            
+            // Hitung ukuran total
+            allData.forEach(r => {
+                const txt = (r.strings && r.strings[targetLang]) ? r.strings[targetLang] : "";
+                strBytes += txt.length * 2;
+            });
+            
+            const totalSize = 17 + (allData.length * 12) + strBytes;
+            const buffer = new ArrayBuffer(totalSize); 
+            const view = new DataView(buffer); 
+            let offset = 0;
+            
+            const magic = "STBL"; 
+            for(let i=0; i<4; i++) view.setUint8(i, magic.charCodeAt(i)); offset+=4;
+            view.setUint8(offset, 2); offset+=1; 
+            view.setUint16(offset, stblHeader.u1, true); offset+=2; 
+            view.setUint32(offset, allData.length, true); offset+=4; 
+            view.setUint16(offset, stblHeader.u2, true); offset+=2; 
+            view.setUint32(offset, stblHeader.u3, true); offset+=4; 
+            
+            allData.forEach(row => {
+                const txt = (row.strings && row.strings[targetLang]) ? row.strings[targetLang] : "";
+                view.setBigUint64(offset, row.keyBig, true); offset+=8; 
+                view.setUint32(offset, txt.length, true); offset+=4;
+                for(let i=0; i<txt.length; i++) { view.setUint16(offset, txt.charCodeAt(i), true); offset+=2; }
+            });
+            
+            const blob = new Blob([buffer], { type: "application/octet-stream" });
+            const url = URL.createObjectURL(blob); 
+            const a = document.createElement('a');
+            a.href = url; a.download = `Edited_Strings_${locales[targetLang].split(' ')[0]}.stbl`; 
+            a.click(); 
+            
+            showLoading(false);
+        }, 50);
+    }
+
+    // --- CONTEXT MENU KLIK KANAN ---
+    const ctxMenu = document.getElementById('context-menu');
+    let targetElement = null;
+
+    document.addEventListener('contextmenu', e => {
+        if (e.target.classList.contains('edit-box')) {
+            e.preventDefault();
+            targetElement = e.target;
+            
+            // Tampilkan aksi di Top Menu Edit
+            document.getElementById('dynamic-edit-context').style.display = 'block';
+            
+            let x = e.clientX, y = e.clientY;
+            
+            // Koreksi kalau menu utama nabrak ujung kanan bawah
+            if (x + 180 > window.innerWidth) x -= 180;
+            if (y + 190 > window.innerHeight) y -= 190;
+
+            ctxMenu.style.left = `${x}px`;
+            ctxMenu.style.top = `${y}px`;
+            
+            // KOREKSI CERDAS: Cek apakah Submenu anak akan menabrak ujung kanan layar
+            const ctxSubmenu = document.getElementById('ctx-submenu-flip');
+            if (x + 180 + 170 > window.innerWidth) {
+                ctxSubmenu.classList.add('flip-left'); // Balik arah buka ke kiri!
+            } else {
+                ctxSubmenu.classList.remove('flip-left');
+            }
+
+            ctxMenu.classList.add('visible');
+        } else {
+            ctxMenu.classList.remove('visible');
+        }
+    });
+	
+	document.addEventListener('focusin', e => {
+        if (e.target && e.target.classList.contains('edit-box')) {
+            targetElement = e.target;
+            // Nyalakan aksi dinamis di Top Menu Edit
+            document.getElementById('dynamic-edit-context').style.display = 'block';
+            
+            // Cek apakah submenu Edit Top Bar akan menabrak kanan layar (Responsive)
+            const editSubmenu = document.getElementById('dynamic-submenu-flip');
+            const editMenuRect = document.getElementById('menu-edit').getBoundingClientRect();
+            if (editMenuRect.right + 170 > window.innerWidth) {
+                editSubmenu.classList.add('flip-left');
+            } else {
+                editSubmenu.classList.remove('flip-left');
+            }
+        }
+    });
+	
+	document.addEventListener('click', e => {
+        if (!e.target.closest('.edit-box') && !e.target.closest('.nav-menu') && !e.target.closest('#context-menu')) {
+            // Matikan aksi dinamis di Top Menu karena context hilang
+            document.getElementById('dynamic-edit-context').style.display = 'none';
+            targetElement = null; 
+        }
+        ctxMenu.classList.remove('visible');
+    });
+
+    document.addEventListener('click', () => ctxMenu.classList.remove('visible'));
+
+    function ctxAction(action) {
+        if (!targetElement) return;
+        const currentKeyHex = targetElement.getAttribute('data-key'); // Ambil GUID baris yang diklik
+
+        if (action === 'copy') {
+            navigator.clipboard.writeText(targetElement.value);
+        } else if (action === 'paste') {
+            navigator.clipboard.readText().then(text => {
+                const start = targetElement.selectionStart;
+                const end = targetElement.selectionEnd;
+                const val = targetElement.value;
+                targetElement.value = val.substring(0, start) + text + val.substring(end);
+                handleInput(targetElement, currentKeyHex);
+            });
+        } else if (action === 'clear') {
+            targetElement.value = '';
+            handleInput(targetElement, currentKeyHex);
+        } else if (action === 'copyToTarget') {
+            // Fitur: Copy Source string to Target (Satu Baris)
+            const item = allData.find(d => d.keyHex === currentKeyHex);
+            if (item) {
+                item.targetStr = item.sourceStr || "";
+                renderPage(); // Refresh tabel
+            }
+		} else if (action === 'copyToAll') {
+            // Fitur: Copy Source string to All Languages
+            const item = allData.find(d => d.keyHex === currentKeyHex);
+            if (item) {
+                item.targetStr = item.sourceStr || "";
+                renderPage();
+                
+                // PEMBERITAHUAN SEMENTARA SEBELUM TAHAP REPAIR PACKAGE
+                alert(`Teks berhasil disalin ke Target.\n\n(Catatan: Karena mesin .package sedang ditahan, sinkronisasi massal ke 23 bahasa lainnya baru akan berfungsi aktif setelah kita menjalankan {Repair Package}).`);
+            }
+        } else if (action === 'editGuid') {
+            // Fitur: Edit GUID
+            openGuidModal(currentKeyHex); // Memanggil modal kaca yang kita buat sebelumnya!
+        } else if (action === 'removeRow') {
+            appleConfirm("Hapus Baris", `Yakin ingin menghapus string dengan GUID ${currentKeyHex}?`, "Hapus String", "Batal", true)
+            .then(res => {
+                if(res) {
+                    allData = allData.filter(d => d.keyHex !== currentKeyHex);
+                    if (isFilterMode) filteredData = filteredData.filter(d => d.keyHex !== currentKeyHex);
+                    else filteredData = allData;
+                    
+                    renderPage();
+                    document.getElementById('topStatusText').innerText = `${allData.length.toLocaleString()} Baris Dimuat`;
+                    showNotification("Dihapus", "Baris berhasil dihapus.", "success");
+                }
+            });
+        }
+        
+        ctxMenu.classList.remove('visible'); // Tutup menu setelah klik
+    }
+	
+	// Fitur Global: Copy ALL Source Lang strings to Target
+    async function copyAllToTarget() {
+        if (allData.length === 0) return;
+        const res = await appleConfirm("Salin Massal", "Ini akan menimpa SEMUA teks terjemahan dengan teks sumber aslinya. Lanjutkan?", "Timpa Teks", "Batal", true);
+        if(res) {
+            showLoading(true);
+            setTimeout(() => {
+                allData.forEach(item => { item.strings[currentTgtLang] = item.strings[currentSrcLang] || ""; });
+                renderPage(); 
+                showLoading(false);
+                showNotification("Selesai", "Berhasil disalin ke Target.", "success");
+            }, 100); 
+        }
+    }
+	
+	
+	document.querySelector('.floating-pagination').addEventListener('click', function (e) {
+    // Cari elemen fpglass-item yang diklik
+    var itemEl = e.target.closest('.fpglass-item, .welcome-card');
+    if (!itemEl || itemEl.classList.contains('disabled')) return;
+
+    /* Squeeze animation */
+    itemEl.classList.remove('squeezed');
+    void itemEl.offsetWidth; // Trigger reflow browser
+    itemEl.classList.add('squeezed');
+    
+    itemEl.addEventListener('animationend', function () {
+        itemEl.classList.remove('squeezed');
+    }, { once: true });
+});
+
+	// --- TRANSISI UI (MENYALAKAN SEMUA MENU & MENAMPILKAN TABEL) ---
+    function initWorkspace() {
+        const welcome = document.getElementById('empty-state');
+        welcome.style.opacity = '0';
+        
+        setTimeout(() => {
+            welcome.style.display = 'none';
+            document.getElementById('editor-view').style.display = 'flex';
+            
+            // 1. Nyalakan Menu Utama
+            document.getElementById('menu-file').classList.remove('disabled');
+            document.getElementById('menu-edit').classList.remove('disabled');
+            
+            // 2. NYALAKAN MENU STBLs (Yang tadi ketinggalan)
+            const menuStbls = document.getElementById('menu-stbls');
+            if(menuStbls) menuStbls.classList.remove('disabled');
+            
+            // 3. NYALAKAN TOP CONTROLS (Badge Bahasa & Set Picker)
+            const topControls = document.getElementById('top-controls');
+            if(topControls) topControls.classList.remove('disabled');
+            
+            renderPage(); // Gambar tabel
+        }, 500);
+    }
+
+    // --- 2. BUAT PROJECT KOSONG ---
+    function startNewProject() {
+        projectSets = { "0x0016B00BA8342F": [{ keyBig: 0n, keyHex: '0x0000000000000000', strings: { "0": "Teks Sumber Baru" } }] };
+        updateSetPicker();
+        document.getElementById('topStatusText').innerText = "Project Baru";
+        initWorkspace();
+    }
+	
+	// --- FITUR: TUTUP PROYEK (KEMBALI KE WELCOME SCREEN) ---
+    function closeProject() {
+        // Panggil Apple Modal dengan peringatan untuk Export
+        appleConfirm(
+            "Tutup Proyek?", 
+            "Data yang belum di-Export (sebagai .Package atau .STBL) akan hilang secara permanen.\n\nSilakan klik Batal lalu pilih menu Export jika Anda ingin menyimpan perubahan.", 
+            "Tutup Tanpa Menyimpan", 
+            "Batal", 
+            true // true = Tombol merah (Danger)
+        ).then(res => {
+            if(res) {
+                // 1. Bersihkan seluruh memori dari otak aplikasi
+                projectSets = {};
+                currentSetId = "";
+                allData = [];
+                filteredData = [];
+                isFilterMode = false;
+                searchMatches = [];
+                currentMatchIdx = -1;
+                
+                // 2. Reset semua input file (agar bisa buka file yang sama lagi)
+                const inputs = ['input-pkg-open', 'input-stbl-open', 'input-pkg-import', 'input-stbl-import', 'input-stbl-add'];
+                inputs.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ""; });
+                
+                // 3. Matikan Layar Editor
+                document.getElementById('editor-view').style.display = 'none';
+                
+                // 4. Nyalakan Kembali Welcome Screen dengan transisi halus
+                const welcome = document.getElementById('empty-state');
+                welcome.style.display = 'flex';
+                setTimeout(() => { welcome.style.opacity = '1'; }, 50);
+                
+                // 5. Kunci kembali semua menu di Top Bar
+                document.getElementById('menu-edit').classList.add('disabled');
+                const menuStbls = document.getElementById('menu-stbls');
+                if(menuStbls) menuStbls.classList.add('disabled');
+                
+                const topControls = document.getElementById('top-controls');
+                if(topControls) topControls.classList.add('disabled');
+                
+                // Kembalikan status teks atas
+                document.getElementById('topStatusText').innerText = "Menunggu File";
+                
+                // Munculkan notifikasi sukses ditutup
+                showNotification("Ditutup", "Proyek berhasil ditutup dan memori dibersihkan.", "info");
+            }
+        });
+    }
+
+    // --- 3. MESIN DEKOMPRESI REFPACK (LOGIKA BYTE DIPERBAIKI) ---
+    function decompressRefPack(input) {
+        const view = new DataView(input);
+        
+        // Cek apakah file benar-benar dikompresi dengan RefPack (Magic: 10 FB)
+        if (view.getUint16(0) !== 0x10FB) return input; 
+        
+        // Ukuran asli file setelah diekstrak (ada di byte ke 2, 3, 4)
+        const outSize = (view.getUint8(2) << 16) | (view.getUint8(3) << 8) | view.getUint8(4);
+        const output = new Uint8Array(outSize);
+        let inPos = 5, outPos = 0;
+
+        while (inPos < input.byteLength && outPos < outSize) {
+            let b0 = view.getUint8(inPos++);
+            let literal_len = 0, copy_len = 0, copy_offset = 0;
+
+            // Membaca Control Bytes DENGAN URUTAN YANG BENAR
+            if (b0 <= 0x7F) {
+                let b1 = view.getUint8(inPos++);
+                literal_len = b0 & 0x03;
+                copy_len = ((b0 & 0x1C) >> 2) + 3;
+                copy_offset = ((b0 & 0x60) << 3) + b1 + 1;
+            } else if (b0 <= 0xBF) {
+                let b1 = view.getUint8(inPos++), b2 = view.getUint8(inPos++);
+                literal_len = (b1 >> 6) & 0x03;
+                copy_len = (b0 & 0x3F) + 4;
+                copy_offset = ((b1 & 0x3F) << 8) + b2 + 1;
+            } else if (b0 <= 0xDF) {
+                let b1 = view.getUint8(inPos++), b2 = view.getUint8(inPos++), b3 = view.getUint8(inPos++);
+                literal_len = b0 & 0x03;
+                copy_len = ((b0 & 0x0C) << 6) + b3 + 5;
+                copy_offset = ((b0 & 0x10) << 12) + (b1 << 8) + b2 + 1;
+            } else if (b0 <= 0xFB) {
+                literal_len = ((b0 & 0x1F) << 2) + 4;
+            } else {
+                literal_len = b0 & 0x03;
+            }
+
+            // SETELAH Control Bytes selesai, baru tulis Literal Bytes (Teks Asli)
+            for (let i = 0; i < literal_len && inPos < input.byteLength; i++) {
+                output[outPos++] = view.getUint8(inPos++);
+            }
+            
+            // Tulis ulang dari history (Proses De-kompresi)
+            for (let i = 0; i < copy_len && outPos < outSize; i++) { 
+                output[outPos] = output[outPos - copy_offset]; 
+                outPos++; 
+            }
+        }
+        return output.buffer;
+    }
+
+    // --- PEMBONGKAR PACKAGE ULTIMATE (MULTI-SET AWARE) ---
+    async function loadPackage(file, isMerge) {
+        if(!file) return; 
+
+        if (!isMerge && Object.keys(projectSets).length > 0) {
+            // PAKAI APPLE CONFIRM
+            const res = await appleConfirm("Timpa Proyek?", "Membuka package baru akan MENGHAPUS SEMUA DATA di proyek saat ini. Lanjutkan?", "Hapus Data Lama", "Batal", true);
+            if(!res) {
+                if(document.getElementById('input-pkg-open')) document.getElementById('input-pkg-open').value = ""; return;
+            }
+        }
+
+        showLoading(true);
+        try {
+            const buf = await file.arrayBuffer();
+            const view = new DataView(buf);
+            
+            if (new TextDecoder().decode(buf.slice(0,4)) !== "DBPF") {
+                showLoading(false); appleAlert("Format Invalid", "Bukan file .package yang valid."); return; 
+            }
+            
+            const indexCount = view.getUint32(36, true);
+            let indexOffset = view.getUint32(64, true);
+            if (indexOffset === 0) indexOffset = view.getUint32(40, true);
+            
+            let pos = indexOffset;
+            const indexTypeFlags = view.getUint32(pos, true); pos += 4;
+            
+            let constantType = 0, constantGroup = 0, constantInstanceHigh = 0;
+            if ((indexTypeFlags & 1) !== 0) { constantType = view.getUint32(pos, true); pos += 4; }
+            if ((indexTypeFlags & 2) !== 0) { constantGroup = view.getUint32(pos, true); pos += 4; }
+            if ((indexTypeFlags & 4) !== 0) { constantInstanceHigh = view.getUint32(pos, true); pos += 4; }
+            
+            let packageEntries = [];
+
+            for (let i = 0; i < indexCount; i++) {
+                let type = (indexTypeFlags & 1) !== 0 ? constantType : view.getUint32(pos, true);
+                if ((indexTypeFlags & 1) === 0) pos += 4;
+                
+                let group = (indexTypeFlags & 2) !== 0 ? constantGroup : view.getUint32(pos, true);
+                if ((indexTypeFlags & 2) === 0) pos += 4;
+                
+                let instHigh = (indexTypeFlags & 4) !== 0 ? constantInstanceHigh : view.getUint32(pos, true);
+                if ((indexTypeFlags & 4) === 0) pos += 4;
+                
+                let instLow = view.getUint32(pos, true); pos += 4;
+                let offset = view.getUint32(pos, true); pos += 4;
+                let size = view.getUint32(pos, true) & 0x7FFFFFFF; 
+                pos += 12; 
+                
+                if (type === 0x220557DA) {
+                    const langHex = (instHigh >>> 24).toString(16); 
+                    const langCode = parseInt(langHex, 16).toString();
+                    
+                    const baseInstHigh = instHigh & 0x00FFFFFF;
+                    const setId = "0x" + baseInstHigh.toString(16).padStart(6, '0').toUpperCase() + instLow.toString(16).padStart(8, '0').toUpperCase();
+
+                    packageEntries.push({ offset, size, langCode, setId });
+                }
+            }
+
+            if(packageEntries.length === 0) {
+                showLoading(false); appleAlert("Kosong", "Tidak ada teks STBL di dalam mod ini."); return; 
+            }
+            
+            let tempSets = isMerge ? { ...projectSets } : {};
+
+            packageEntries.forEach(entry => {
+                let stblBuf = buf.slice(entry.offset, entry.offset + entry.size);
+                const decompressed = decompressRefPack(stblBuf);
+                const parsed = parseSTBL(decompressed, false);
+                
+                if (!tempSets[entry.setId]) tempSets[entry.setId] = [];
+                let currentSetData = tempSets[entry.setId];
+                
+                parsed.forEach(row => {
+                    let exist = currentSetData.find(d => d.keyBig === row.keyBig);
+                    if (!exist) {
+                        exist = { keyBig: row.keyBig, keyHex: row.keyHex, strings: {} };
+                        currentSetData.push(exist);
+                    }
+                    exist.strings[entry.langCode] = row.str; 
+                });
+            });
+
+            projectSets = tempSets;
+            updateSetPicker();
+            
+            if(document.getElementById('input-pkg-open')) document.getElementById('input-pkg-open').value = "";
+            if(document.getElementById('input-pkg-import')) document.getElementById('input-pkg-import').value = "";
+            showNotification("Berhasil", `Mod dimuat: ${packageEntries.length} bahasa.`, "success");
+            initWorkspace();
+        } catch (err) { appleAlert("Error", err.message); } finally { showLoading(false); }
+    }
+	
+	// =========================================================
+    // TAHAP 3: LOGIKA S3SE (BAHASA, STRING SET, DAN FNV64 HASH)
+    // =========================================================
+
+    // --- 1. DAFTAR BAHASA (Diambil langsung dari Form1.cs) ---
+    const locales = [
+        "English (en-us)", "Chinese (zh-cn)", "Chinese Taiwan (zh-tw)", "Czech (cs-cz)", "Danish (da-dk)",
+        "Dutch (nl-nl)", "Finnish (fi-fi)", "French (fr-fr)", "German (de-de)", "Greek (el-gr)",
+        "Hungarian (hu-hu)", "Italian (it-it)", "Japanese (ja-ja)", "Korean (ko-kr)", "Norwegian (no-no)",
+        "Polish (pl-pl)", "Portuguese (pt-pt)", "Portuguese Brazil (pt-br)", "Russian (ru-ru)", "Spanish (es-es)",
+        "Spanish Mexico (es-mx)", "Swedish (sv-se)", "Thai (th-th)"
+    ];
+
+    // Fungsi mengisi dropdown bahasa di Top Menu saat web dimuat
+    function initLanguageDropdowns() {
+        const selSrc = document.getElementById('lang-source');
+        const selTgt = document.getElementById('lang-target');
+        
+        if (!selSrc || !selTgt) return;
+        
+        selSrc.innerHTML = ''; selTgt.innerHTML = '';
+        locales.forEach((loc, idx) => {
+            selSrc.innerHTML += `<option value="${idx}">Src: ${loc}</option>`;
+            selTgt.innerHTML += `<option value="${idx}">Tgt: ${loc}</option>`;
+        });
+        
+        // Default: Source English (0), Target Indonesia (atau biarkan jika tidak ada ID, pakai default target yang kamu mau)
+        selSrc.value = 0; // English
+        selTgt.value = 0; 
+    }
+    // Panggil otomatis saat mulai
+    document.addEventListener("DOMContentLoaded", initLanguageDropdowns);
+
+    // --- 2. FNV64 HASH ENGINE (Standar The Sims 3) ---
+    function hashFNV64(str) {
+        // Sims 3 biasanya mengubah teks menjadi lowercase sebelum di-hash
+        const lowerStr = str.toLowerCase(); 
+        
+        // FNV-1a 64-bit Parameters menggunakan BigInt
+        let hash = 0xcbf29ce484222325n; 
+        const prime = 0x100000001b3n;
+
+        for (let i = 0; i < lowerStr.length; i++) {
+            hash ^= BigInt(lowerStr.charCodeAt(i));
+            // Perkalian BigInt dan dipotong agar tetap 64-bit (unsigned)
+            hash = BigInt.asUintN(64, hash * prime); 
+        }
+        
+        // Kembalikan dalam format 0xHEX huruf besar
+        return "0x" + hash.toString(16).padStart(16, '0').toUpperCase();
+    }
+
+
+    // --- 3. LOGIKA POPUP ADD / EDIT GUID ---
+    let editingGuidHex = null; // Menyimpan ID yang sedang diedit (null jika tambah baru)
+
+    // Membuka modal kaca (Kirim '0' untuk buat baru, atau string Hex untuk edit)
+    function openGuidModal(guidHex = 0) {
+        document.querySelector('.floating-pagination').classList.add('hidden-by-search');
+        
+        const modal = document.getElementById('guid-modal');
+        const title = document.getElementById('guid-modal-title');
+        const textInput = document.getElementById('guid-text-input');
+        const hexInput = document.getElementById('guid-hex-input');
+        
+        if (guidHex === 0 || !guidHex) {
+            editingGuidHex = null;
+            title.innerText = "Tambah String (Baru)";
+            textInput.value = "";
+            hexInput.value = "";
+        } else {
+            editingGuidHex = guidHex;
+            title.innerText = "Edit Instance GUID";
+            textInput.value = ""; // Teks asli tidak bisa dikembalikan (hash itu 1 arah)
+            hexInput.value = guidHex;
+        }
+
+        modal.style.display = 'flex';
+        void modal.offsetWidth; // Force reflow
+        modal.style.opacity = '1';
+        
+        setTimeout(() => textInput.focus(), 150);
+    }
+
+    function closeGuidModal() {
+        const modal = document.getElementById('guid-modal');
+        modal.style.opacity = '0';
+        
+        setTimeout(() => {
+            modal.style.display = 'none';
+            document.querySelector('.floating-pagination').classList.remove('hidden-by-search');
         }, 300);
     }
 
-    function saveTargetFile() {
-        if(allData.length === 0) return alert("Kosong!"); showLoading(true);
-        setTimeout(() => {
-            let strBytes = 0; allData.forEach(r => strBytes += (r.targetStr || r.sourceStr || "").length * 2);
-            const totalSize = 17 + (allData.length * 12) + strBytes;
-            const buffer = new ArrayBuffer(totalSize); const view = new DataView(buffer); let offset = 0;
-            const magic = "STBL"; for(let i=0; i<4; i++) view.setUint8(i, magic.charCodeAt(i)); offset+=4;
-            view.setUint8(offset, 2); offset+=1; view.setUint16(offset, 0, true); offset+=2; 
-            view.setUint32(offset, allData.length, true); offset+=4; view.setUint32(offset, 0, true); offset+=4; view.setUint16(offset, 0, true); offset+=2; 
-            allData.forEach(row => {
-                const txt = row.targetStr !== undefined ? row.targetStr : (row.sourceStr || "");
-                view.setBigUint64(offset, row.keyBig, true); offset+=8; view.setUint32(offset, txt.length, true); offset+=4;
-                for(let i=0; i<txt.length; i++) { view.setUint16(offset, txt.charCodeAt(i), true); offset+=2; }
-            });
-            const blob = new Blob([buffer], { type: "application/octet-stream" });
-            const url = URL.createObjectURL(blob); const a = document.createElement('a');
-            a.href = url; a.download = "Translated_Strings.stbl"; a.click(); showLoading(false);
-        }, 50);
+    // Tombol Generate Hash
+    function generateFNV64() {
+        const textInput = document.getElementById('guid-text-input').value;
+        const hexInput = document.getElementById('guid-hex-input');
+        
+        if (!textInput.trim()) {
+            // Jika kosong, pakai random sesuai logika AddEditGUID.cs: username + datetime
+            const randomStr = "User" + new Date().getTime().toString();
+            hexInput.value = hashFNV64(randomStr);
+        } else {
+            hexInput.value = hashFNV64(textInput);
+        }
     }
+
+    // Tombol Simpan GUID
+    function saveGuid() {
+        let newHex = document.getElementById('guid-hex-input').value.trim();
+        
+        // Validasi format standar 0x + 16 karakter Hex
+        if (!/^0x[0-9A-Fa-f]{16}$/i.test(newHex)) {
+            alert("Format GUID salah! Harus diawali '0x' diikuti 16 karakter Hexadecimal.");
+            return;
+        }
+        
+        newHex = newHex.toUpperCase();
+        newHex = newHex.replace("0X", "0x"); // Paksa 0x huruf kecil
+        const newBig = BigInt(newHex);
+
+        // Cek apakah GUID ini sudah ada di tabel (mencegah duplikat)
+        const isDuplicate = allData.some(d => d.keyHex === newHex && d.keyHex !== editingGuidHex);
+        if (isDuplicate) {
+            alert(`Peringatan: GUID ${newHex} sudah ada di dalam tabel!`);
+            return;
+        }
+
+        if (editingGuidHex) {
+            // --- MODE EDIT ---
+            const item = allData.find(d => d.keyHex === editingGuidHex);
+            if (item) {
+                item.keyHex = newHex;
+                item.keyBig = newBig;
+                // Jangan ubah target/source stringnya
+            }
+        } else {
+            // --- MODE TAMBAH BARU ---
+            allData.push({
+                keyBig: newBig,
+                keyHex: newHex,
+                sourceStr: "New String",
+                targetStr: ""
+            });
+            filteredData = allData;
+            
+            // Opsional: Langsung arahkan ke halaman terakhir tempat data baru ini muncul
+            currentPage = Math.ceil(allData.length / ITEMS_PER_PAGE); 
+        }
+
+        renderPage();
+        closeGuidModal();
+        document.getElementById('topStatusText').innerText = `Diperbarui: ${allData.length} Baris`;
+    }
+	
+	// --- FITUR: COPY SEMUA SUMBER KE SEMUA 23 BAHASA ---
+    async function copyAllToAll() {
+        if (allData.length === 0) return;
+        const res = await appleConfirm("Sinkronisasi 23 Bahasa", `Ini akan menimpa SEMUA teks di 22 bahasa lainnya dengan teks dari [Bahasa Sumber: ${locales[currentSrcLang]}]. Lanjutkan?`, "Timpa Semua", "Batal", true);
+        if(res) {
+            showLoading(true);
+            setTimeout(() => {
+                allData.forEach(item => {
+                    const srcText = item.strings[currentSrcLang] || "";
+                    for(let i = 0; i <= 22; i++) item.strings[i.toString()] = srcText;
+                });
+                renderPage();
+                showLoading(false);
+                showNotification("Selesai", "Sinkronisasi massal ke 23 bahasa berhasil!", "success");
+            }, 100); 
+        }
+    }
+	
+	// --- MESIN COMPILER DBPF (.PACKAGE) (MULTI-SET AWARE) ---
+    async function savePackageFile() {
+        const setIds = Object.keys(projectSets);
+        if(setIds.length === 0 || setIds.every(id => projectSets[id].length === 0)) return appleAlert("Kosong", "Proyek kosong! Tidak ada data yang bisa disimpan.");
+        
+        // Pilihan Kustom Apple Modal
+        const saveAllLangs = await appleConfirm("Opsi Ekspor", "Apakah Anda ingin mengekspor seluruh 23 bahasa sekaligus, atau hanya bahasa target saat ini?", "Full (23 Bahasa)", "Target Saja", false);
+        
+        showLoading(true);
+        setTimeout(() => {
+            try {
+                let stblBuffers = [];
+                let totalStblSize = 0;
+                // Jika saveAllLangs true (tombol biru ditekan) -> 23 bahasa. Jika false -> 1 bahasa target.
+                const langsToSave = saveAllLangs ? Array.from({length: 23}, (_, i) => i.toString()) : [currentTgtLang];
+
+                setIds.forEach(setId => {
+                    const setData = projectSets[setId];
+                    if (setData.length === 0) return;
+
+                    const baseInstBig = BigInt(setId);
+                    const baseInstHigh = Number(baseInstBig >> 32n) & 0x00FFFFFF;
+                    const baseInstLow = Number(baseInstBig & 0xFFFFFFFFn);
+
+                    langsToSave.forEach(lang => {
+                        let strBytes = 0;
+                        setData.forEach(r => strBytes += (r.strings[lang] || "").length * 2);
+                        const stblSize = 17 + (setData.length * 12) + strBytes;
+                        const buf = new ArrayBuffer(stblSize);
+                        const view = new DataView(buf);
+                        let offset = 0;
+
+                        "STBL".split('').forEach(c => { view.setUint8(offset++, c.charCodeAt(0)); });
+                        view.setUint8(offset++, 2); 
+                        view.setUint16(offset, stblHeader.u1, true); offset+=2;
+                        view.setUint32(offset, setData.length, true); offset+=4;
+                        view.setUint16(offset, stblHeader.u2, true); offset+=2;
+                        view.setUint32(offset, stblHeader.u3, true); offset+=4;
+
+                        setData.forEach(row => {
+                            const txt = row.strings[lang] || "";
+                            view.setBigUint64(offset, row.keyBig, true); offset+=8;
+                            view.setUint32(offset, txt.length, true); offset+=4;
+                            for(let i=0; i<txt.length; i++) { view.setUint16(offset, txt.charCodeAt(i), true); offset+=2; }
+                        });
+
+                        let instHigh = (parseInt(lang) << 24) | baseInstHigh;
+                        let instLow = baseInstLow;
+
+                        stblBuffers.push({ instHigh, instLow, buffer: buf });
+                        totalStblSize += buf.byteLength;
+                    });
+                });
+
+                const indexSize = 4 + (stblBuffers.length * 32); 
+                const dbpfSize = 96 + totalStblSize + indexSize;
+                const dbpfBuf = new ArrayBuffer(dbpfSize);
+                const dbpfView = new DataView(dbpfBuf);
+                
+                "DBPF".split('').forEach((c, i) => dbpfView.setUint8(i, c.charCodeAt(0)));
+                dbpfView.setUint32(4, 2, true); 
+                dbpfView.setUint32(36, stblBuffers.length, true); 
+                dbpfView.setUint32(40, 96 + totalStblSize, true); 
+                dbpfView.setUint32(44, indexSize, true);          
+                dbpfView.setUint32(60, 3, true);                  
+                dbpfView.setUint32(64, 96 + totalStblSize, true); 
+
+                let dataOffset = 96;
+                let indexOffset = 96 + totalStblSize;
+                dbpfView.setUint32(indexOffset, 0, true);
+                indexOffset += 4;
+
+                stblBuffers.forEach(stbl => {
+                    new Uint8Array(dbpfBuf, dataOffset, stbl.buffer.byteLength).set(new Uint8Array(stbl.buffer));
+
+                    dbpfView.setUint32(indexOffset, 0x220557DA, true); 
+                    dbpfView.setUint32(indexOffset + 4, 0x00000000, true); 
+                    dbpfView.setUint32(indexOffset + 8, stbl.instHigh, true); 
+                    dbpfView.setUint32(indexOffset + 12, stbl.instLow, true); 
+                    dbpfView.setUint32(indexOffset + 16, dataOffset, true); 
+                    dbpfView.setUint32(indexOffset + 20, stbl.buffer.byteLength | 0x80000000, true); 
+                    dbpfView.setUint32(indexOffset + 24, stbl.buffer.byteLength, true); 
+                    dbpfView.setUint16(indexOffset + 28, 0xFFFF, true); 
+                    dbpfView.setUint16(indexOffset + 30, 0x0001, true); 
+
+                    dataOffset += stbl.buffer.byteLength;
+                    indexOffset += 32;
+                });
+
+                const blob = new Blob([dbpfBuf], { type: "application/octet-stream" });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); 
+                a.download = "Edited_Strings_S3SE.package"; 
+                a.click();
+            } catch (err) { appleAlert("Error", "Gagal membangun Package: " + err.message); } finally { showLoading(false); }
+        }, 100);
+    }
+	
+	// --- FITUR ANIMASI STATUS TEKS (APPLE MARQUEE) ---
+    document.addEventListener("DOMContentLoaded", () => {
+        const wrapper = document.querySelector('.top-status-wrapper');
+        const textEl = document.getElementById('topStatusText');
+
+        if(wrapper && textEl) {
+            wrapper.addEventListener('mouseenter', () => {
+                // 1. Hitung lebar teks asli vs lebar kotak yang tersedia
+                const availableWidth = wrapper.clientWidth - 24; // 24px adalah padding
+                const overflow = textEl.scrollWidth - availableWidth;
+                
+                // 2. Jika teks tumpah (lebih panjang dari kotak), jalankan animasi!
+                if (overflow > 0) {
+                    // Geser sejauh teks yang tumpah + 10px ekstra agar bisa terbaca sampai ujung
+                    textEl.style.setProperty('--scroll-amount', `-${overflow + 10}px`);
+                    
+                    // Kecepatan adaptif: Makin panjang teks, durasinya makin lama agar mata nyaman membaca
+                    const duration = Math.max(3, overflow / 30); 
+                    textEl.style.animation = `statusMarquee ${duration}s linear infinite alternate`;
+                }
+            });
+
+            wrapper.addEventListener('mouseleave', () => {
+                // Matikan animasi dan kembalikan ke posisi semula saat mouse pergi
+                textEl.style.animation = 'none'; 
+            });
+        }
+    });
 </script>
+
+	<svg xmlns="http://www.w3.org/2000/svg" style="position: absolute; width: 0; height: 0; pointer-events: none;" aria-hidden="true">
+      <filter id="lensFilter" x="0%" y="0%" width="100%" height="100%" filterUnits="objectBoundingBox">
+        <feComponentTransfer in="SourceAlpha" result="alpha">
+          <feFuncA type="identity" />
+        </feComponentTransfer>
+        <feGaussianBlur in="alpha" stdDeviation="50" result="blur" />
+        <feDisplacementMap in="SourceGraphic" in2="blur" scale="50" xChannelSelector="A" yChannelSelector="A" />
+      </filter>
+    </svg>
 
 </body>
 </html>
