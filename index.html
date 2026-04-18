@@ -808,28 +808,39 @@ textarea.edit-box:focus { background: rgba(10, 132, 255, 0.05); }
 
         if (mode === 'filter') {
             isFilterMode = true;
-            filteredData = allData.filter(item => 
-                (item.sourceStr && item.sourceStr.toLowerCase().includes(term)) ||
-                (item.targetStr && item.targetStr.toLowerCase().includes(term)) ||
-                (item.keyHex.toLowerCase().includes(term))
-            );
+            filteredData = allData.filter(item => {
+                // Ambil teks dari bahasa yang sedang aktif saat ini
+                const srcStr = item.strings[currentSrcLang] || "";
+                const tgtStr = item.strings[currentTgtLang] || "";
+                
+                return srcStr.toLowerCase().includes(term) ||
+                       tgtStr.toLowerCase().includes(term) ||
+                       item.keyHex.toLowerCase().includes(term);
+            });
             currentPage = 1; renderPage();
             document.getElementById('searchMatchInfo').innerText = `${filteredData.length} Disaring`;
         } else {
             isFilterMode = false; filteredData = allData; 
             allData.forEach((item, index) => {
-                if ((item.sourceStr && item.sourceStr.toLowerCase().includes(term)) ||
-                    (item.targetStr && item.targetStr.toLowerCase().includes(term)) ||
-                    (item.keyHex.toLowerCase().includes(term))) {
+                // Ambil teks dari bahasa yang sedang aktif saat ini
+                const srcStr = item.strings[currentSrcLang] || "";
+                const tgtStr = item.strings[currentTgtLang] || "";
+
+                if (srcStr.toLowerCase().includes(term) ||
+                    tgtStr.toLowerCase().includes(term) ||
+                    item.keyHex.toLowerCase().includes(term)) {
                     searchMatches.push(index);
                 }
             });
 
-            if(searchMatches.length > 0) { currentMatchIdx = 0; goToMatch(); } 
-            else {
+            if(searchMatches.length > 0) { 
+                currentMatchIdx = 0; 
+                goToMatch(); 
+            } else {
+                // Hapus alert() yang mengganggu, cukup update teks informasinya saja
                 document.getElementById('searchMatchInfo').innerText = "0 / 0 Ditemukan";
-                document.getElementById('btnPrevMatch').disabled = true; document.getElementById('btnNextMatch').disabled = true;
-                alert("Teks tidak ditemukan.");
+                document.getElementById('btnPrevMatch').disabled = true; 
+                document.getElementById('btnNextMatch').disabled = true;
             }
         }
     }
